@@ -1,0 +1,93 @@
+html, body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+}
+
+body {
+	font-family: arial, helvetica, sans-serif;
+	font-size: 9pt;
+	color: #333333;
+}
+
+#div-chat-log {
+	width: 100%;
+	max-height: 40px;
+	text-align: center;
+	margin: 0 auto;
+	background-color: #ffffff;
+	overflow: auto;
+}
+
+#div-chatroom {
+	height: calc(100% - 70px); /* IE9+ and future browsers */
+	height: -moz-calc(100% - 70px); /* Firefox */
+	height: -webkit-calc(100% - 70px); /* Chrome, Safari */
+	padding: 0;
+	text-align: center;
+	margin: 0 auto;
+	background-color: green;
+	overflow: auto;
+}
+
+#div-users-list {
+	width: 200px;
+	height: calc(100% - 70px); /* IE9+ and future browsers */
+	height: -moz-calc(100% - 70px); /* Firefox */
+	height: -webkit-calc(100% - 70px); /* Chrome, Safari */
+	padding: 0;
+	margin: 0 auto;
+	background-color: black;
+	overflow: auto;
+	float: right;
+}
+
+header {
+	height: 50px;
+	text-align: left;
+	padding: 0;
+	margin: 0 auto;
+	background-color: #202020;
+}
+
+footer {
+	height: 20px;
+	text-align: left;
+	padding: 0;
+	margin: 0 auto;
+	background-color: #202020;
+}
+
+.div-chat-box {
+	background-color: #999999;
+}
+
+.p-users-list {
+	color: #333333;
+	font-size: 11pt;
+	vertical-align: middle;
+	text-align: center;
+	margin: 4px 0px 4px 0px;
+	padding: 3px;
+	background-color: #f4f4f4;
+}
+
+.p-info {
+	color: black;
+	margin-top: 4px;
+	margin-bottom: 4px;
+}
+
+.p-success {
+	font-weight: bold;
+	color: blue;
+	margin-top: 4px;
+	margin-bottom: 4px;
+}
+
+.p-warning {
+	font-weight: bold;
+	color: red;
+	margin-top: 4px;
+	margin-bottom: 4px;
+}
