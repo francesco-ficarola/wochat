@@ -1,8 +1,8 @@
 package it.uniroma1.dis.wsngroup.wochat.json;
 
-public class SingleJsonObjectRequest {
+public class JsonRequest<T> {
 	private String request;
-	private Object data;
+	private T data;
 
 	public String getRequest() {
 		return request;
@@ -12,11 +12,11 @@ public class SingleJsonObjectRequest {
 		this.request = request;
 	}
 
-	public Object getData() {
+	public T getData() {
 		return data;
 	}
 
-	public void setData(Object data) {
+	public void setData(T data) {
 		this.data = data;
 	}
 }

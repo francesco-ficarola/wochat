@@ -36,8 +36,10 @@ import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.DataOnTheFly;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.UserInfo;
-import it.uniroma1.dis.wsngroup.wochat.json.SingleJsonObjectRequest;
-import it.uniroma1.dis.wsngroup.wochat.json.SingleJsonObjectResponse;
+import it.uniroma1.dis.wsngroup.wochat.json.JsonRequest;
+import it.uniroma1.dis.wsngroup.wochat.json.JsonResponse;
+import it.uniroma1.dis.wsngroup.wochat.json.UserInfoRequest;
+import it.uniroma1.dis.wsngroup.wochat.json.UserInfoResponse;
 import it.uniroma1.dis.wsngroup.wochat.utils.Constants;
 import it.uniroma1.dis.wsngroup.wochat.utils.Functions;
 
@@ -143,7 +145,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 				
 				if(splitter.length > 1) {	
 					String username = splitter[1];
-					SingleJsonObjectResponse responseJson = new SingleJsonObjectResponse();
+					JsonResponse responseJson = new JsonResponse();
 					
 					if(!usernamesSet.contains(username)) {
 						responseJson.setResponse(Constants.SUCCESS);
@@ -246,12 +248,12 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 	
 	private void manageMessages(Channel channel, String jsonReq) {
 		logger.debug(jsonReq);
-		SingleJsonObjectRequest objReq = gson.fromJson(jsonReq, SingleJsonObjectRequest.class);
+		UserInfoRequest userInfoReq = gson.fromJson(jsonReq, UserInfoRequest.class);
 		
 		/** Message request on the connection status */
-		if(objReq.getRequest().equals(Constants.GET_CONN_STATUS)) {
+		if(userInfoReq.getRequest().equals(Constants.GET_CONN_STATUS)) {
 			String remoteHost = getRemoteHost(channel);
-			SingleJsonObjectResponse objResp = new SingleJsonObjectResponse();
+			UserInfoResponse userInfoResp = new UserInfoResponse();
 			
 			/** If the user's IP address is already registered, then send user info ... */
 			if(usersMap_IpId.containsKey(remoteHost)) {
@@ -259,24 +261,24 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 				String username = usersMap_IdUsername.get(id);
 				UserInfo userInfo = new UserInfo();
 				userInfo.setId(id).setUsername(username);
-				objResp.setResponse(Constants.REG_USER_STATUS);
-				objResp.setData(userInfo);
+				userInfoResp.setResponse(Constants.REG_USER_STATUS);
+				userInfoResp.setData(userInfo);
 			}
 			
 			/** ... otherwise send new_user_status string */
 			else {
-				objResp.setResponse(Constants.NEW_USER_STATUS);
+				userInfoResp.setResponse(Constants.NEW_USER_STATUS);
 			}
 			
-			channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(objResp)));
+			channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(userInfoResp)));
 		}
 		
 		else
 		
 		/** Message request to join the chat */
-		if(objReq.getRequest().equals(Constants.JOIN_CHAT)) {
+		if(userInfoReq.getRequest().equals(Constants.JOIN_CHAT)) {
 			//FIXME
-			UserInfo userInfo = (UserInfo) objReq.getData();
+			UserInfo userInfo = userInfoReq.getData();
 			logger.debug(userInfo.getUsername());
 			
 			/** Manage users */
