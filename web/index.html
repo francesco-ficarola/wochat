@@ -14,17 +14,14 @@
 
 <body>
 	<header>
-		<table id="table-header">
-			<tr>
-				<td id="td-logo">
-					LOGO HERE
-				</td>
-				<td id="td-send-username">
-					<p id="p-send-username" />
-					<p id="p-username-exists" />
-				</td>
-			</tr>
-		</table>
+		<!-- IMPORTANT: right div (i.e., div-user-status) before left div (i.e., div-logo) -->
+		<div id="div-user-status">
+			<p id="p-send-username" />
+			<p id="p-username-exists" />
+		</div>
+		<div id="div-logo">
+			LOGO HERE
+		</div>
 	</header>
 	
 	<div id="div-chat-log"></div>

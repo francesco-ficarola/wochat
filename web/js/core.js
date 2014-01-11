@@ -1,5 +1,7 @@
 const SUCCESS = 'success';
 const FAIL = 'fail';
+const USERS_ADD = "users_add";
+const USERS_REM = "users_rem";
 const GET_CONN_STATUS = 'get_conn_status';
 const NEW_USER_STATUS = 'new_user_status';
 const REG_USER_STATUS = 'reg_user_status';
@@ -33,6 +35,7 @@ $(document).ready(function() {
 		$('#user-input-box').focusout(function() {
 			$(this).css('background', '#ffffff');
 		});
+		
 	}
 });
 
@@ -63,12 +66,12 @@ function onSocketClose(e) {
 
 function onMessageReceived(e) {
 	console.log('Message received.');
-	console.log(e.data);
 	var msg = e.data;
+	console.log(msg);
 	try {
 		var jsonMsg = $.parseJSON(msg);
 		
-		// Reponse to the connection status request
+		// Reponse to the previous request
 		if(jsonMsg.response) {
 			if(jsonMsg.response === NEW_USER_STATUS) {
 				var registration_form = '\
@@ -79,7 +82,10 @@ function onMessageReceived(e) {
 							';
 				$('#p-send-username').hide().html(registration_form).fadeIn('slow');
 				$('#form-send-username').on('submit', registrationFormListener);
-			} else
+			}
+			
+			else
+			
 			if(jsonMsg.response === REG_USER_STATUS) {
 				var user_status_message = 'You are ' + jsonMsg.data.username;
 				$('#p-send-username').hide().html(user_status_message).fadeIn('slow');
@@ -88,32 +94,33 @@ function onMessageReceived(e) {
 				var join_chat_message = '{ "request": "' + JOIN_CHAT + '", "data": { "username": "' + jsonMsg.data.username + '" } }';
 				sendMessage(join_chat_message);
 			}
-		}
-		
-		else
-		
-		// Users list
-		if(jsonMsg.users_add) {
-			var usersList = jsonMsg.users_add;
-			for(var i=0; i<usersList.length; i++) {
-				div_users_list.append('<p class="p-users-list" id="' + usersList[i].id + '">' + usersList[i].id + '</p>');
+			
+			else
+			
+			if(jsonMsg.response === USERS_ADD) {
+				var usersList = jsonMsg.data;
+				for(var i=0; i<usersList.length; i++) {
+					div_users_list.append('<p class="p-users-list" id="' + usersList[i].id + '">' + usersList[i].username + '</p>');
+				}
 			}
-		}
-		
-		else
-		
-		if(jsonMsg.users_rem) {
-			console.log('Deleting ' + jsonMsg.users_rem[0].id);
-			$('#' + jsonMsg.users_rem[0].id).remove();
+			
+			else
+			
+			if(jsonMsg.response === USERS_REM) {
+				var usersList = jsonMsg.data;
+				for(var i=0; i<usersList.length; i++) {
+					$('#' + usersList[i].id).remove();
+				}
+			}
 		}
 		
 		// Other messages
 		else {
-		
+			console.warn('No supported message.');
 		}
 		
 	} catch(exception) {
-		console.warn('No JSON object received: ' + msg);
+		console.error('Error: ' + msg + ", " + exception);
 	}
 }
 

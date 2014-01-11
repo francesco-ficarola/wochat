@@ -1,6 +1,8 @@
 package it.uniroma1.dis.wsngroup.wochat.core;
 
 import java.net.InetSocketAddress;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -9,8 +11,6 @@ import java.util.regex.Pattern;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -36,10 +36,9 @@ import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.DataOnTheFly;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.UserInfo;
-import it.uniroma1.dis.wsngroup.wochat.json.JsonRequest;
-import it.uniroma1.dis.wsngroup.wochat.json.JsonResponse;
-import it.uniroma1.dis.wsngroup.wochat.json.UserInfoRequest;
-import it.uniroma1.dis.wsngroup.wochat.json.UserInfoResponse;
+import it.uniroma1.dis.wsngroup.wochat.json.MultiUsersInfoResponse;
+import it.uniroma1.dis.wsngroup.wochat.json.SingleUserInfoRequest;
+import it.uniroma1.dis.wsngroup.wochat.json.SingleUserInfoResponse;
 import it.uniroma1.dis.wsngroup.wochat.utils.Constants;
 import it.uniroma1.dis.wsngroup.wochat.utils.Functions;
 
@@ -145,7 +144,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 				
 				if(splitter.length > 1) {	
 					String username = splitter[1];
-					JsonResponse responseJson = new JsonResponse();
+					SingleUserInfoResponse responseJson = new SingleUserInfoResponse();
 					
 					if(!usernamesSet.contains(username)) {
 						responseJson.setResponse(Constants.SUCCESS);
@@ -248,12 +247,14 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 	
 	private void manageMessages(Channel channel, String jsonReq) {
 		logger.debug(jsonReq);
-		UserInfoRequest userInfoReq = gson.fromJson(jsonReq, UserInfoRequest.class);
+		SingleUserInfoRequest userInfoReq = gson.fromJson(jsonReq, SingleUserInfoRequest.class);
 		
 		/** Message request on the connection status */
 		if(userInfoReq.getRequest().equals(Constants.GET_CONN_STATUS)) {
 			String remoteHost = getRemoteHost(channel);
-			UserInfoResponse userInfoResp = new UserInfoResponse();
+			SingleUserInfoResponse userInfoResp = new SingleUserInfoResponse();
+			
+			logger.debug("Request of connection status by:" + remoteHost);
 			
 			/** If the user's IP address is already registered, then send user info ... */
 			if(usersMap_IpId.containsKey(remoteHost)) {
@@ -263,11 +264,13 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 				userInfo.setId(id).setUsername(username);
 				userInfoResp.setResponse(Constants.REG_USER_STATUS);
 				userInfoResp.setData(userInfo);
+				logger.debug("Sending response to already registered user: " + id + " - " + username);
 			}
 			
 			/** ... otherwise send new_user_status string */
 			else {
 				userInfoResp.setResponse(Constants.NEW_USER_STATUS);
+				logger.debug("Sending response to the new user");
 			}
 			
 			channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(userInfoResp)));
@@ -277,17 +280,15 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		/** Message request to join the chat */
 		if(userInfoReq.getRequest().equals(Constants.JOIN_CHAT)) {
-			//FIXME
 			UserInfo userInfo = userInfoReq.getData();
-			logger.debug(userInfo.getUsername());
+			logger.debug("Request to join chat from: " + userInfo.getUsername());
 			
 			/** Manage users */
-			//TODO manage chat and user
-//			manageUsers(channel, username);
+			manageUsers(channel, userInfo.getUsername());
 		}
 	}
 	
-	private void manageUsers(Channel channel, String newUsername) {
+	private void manageUsers(Channel channel, String username) {
 		String remoteHost = getRemoteHost(channel);
 		logger.debug("Remote Host: " + remoteHost);
 		
@@ -307,14 +308,11 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		/** Managing the user... */
 		String id = "";
-		String username = "";
-
 		
 		/** IP address already registered */
 		if(usersMap_IpId.containsKey(remoteHost)) {
 			logger.debug("IP address already registered");
 			id = usersMap_IpId.get(remoteHost);
-			username = usersMap_IdUsername.get(id);
 			
 			/** The user reloaded the page or he disconnected and connected again using just one browser. */
 			if(channelsMap_IpChannelGroup.get(remoteHost).size() == 1) {
@@ -328,7 +326,6 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		else {
 			logger.debug("New IP address");
 			id = String.valueOf(usersMap_IpId.size() + Constants.MIN_USERS_ID_RANGE);
-			username = newUsername;
 			usersMap_IpId.put(remoteHost, id);
 			usersMap_IdUsername.put(id, username);
 			
@@ -337,19 +334,18 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		}
 		
 		/** Creating a JSON object including all users connected */
-		JsonObject usersListJson = new JsonObject();
-		JsonArray usersArray = new JsonArray();
+		MultiUsersInfoResponse connectedUsersResp = new MultiUsersInfoResponse();
+		List<UserInfo> connectedUsersList = new LinkedList<UserInfo>();
 		Set<Map.Entry<String, String>> usersSet = usersMap_IdUsername.entrySet();
 		for (Map.Entry<String, String> user : usersSet) {
-			JsonObject singleUser = new JsonObject();
-			singleUser.addProperty("id", user.getKey());
-			singleUser.addProperty("username", user.getValue());
-			usersArray.add(singleUser);
+			UserInfo userInfo = new UserInfo().setId(id).setUsername(user.getValue());
+			connectedUsersList.add(userInfo);
 	    }
-		usersListJson.add(Constants.USERS_ADD, usersArray);
+		connectedUsersResp.setResponse(Constants.USERS_ADD);
+		connectedUsersResp.setData(connectedUsersList);
 		
 		/** Send all users list to the connected user (new or already registered) */
-		channel.writeAndFlush(new TextWebSocketFrame(usersListJson.toString()));
+		channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(connectedUsersResp)));
 	}
 	
 	private void manageDisconnections(Channel channel) {
@@ -366,17 +362,15 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 	}
 	
 	private void broadcastUserStatus(String id, String username, Channel channel, String status) {
-		/** Creating a JSON object including just the new user */
-		JsonObject userJson = new JsonObject();
-		JsonArray userArray = new JsonArray();
-		JsonObject userInfo = new JsonObject();
-		userInfo.addProperty("id", id);
-		userInfo.addProperty("username", username);
-		userArray.add(userInfo);
-		userJson.add(status, userArray);
+		/** Creating a JSON object including just the corresponding new user */
+		MultiUsersInfoResponse userInfoResp = new MultiUsersInfoResponse();
+		List<UserInfo> userList = new LinkedList<UserInfo>();
+		userList.add(new UserInfo().setId(id).setUsername(username));
+		userInfoResp.setResponse(status);
+		userInfoResp.setData(userList);
 		
 		/** Broadcast new user to everyone (excepting the new user who will processed later) */
-		broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(userJson.toString()), ChannelMatchers.isNot(channel));
+		broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(gson.toJson(userInfoResp)), ChannelMatchers.isNot(channel));
 	}
 	
 	private String getRemoteHost(Channel channel) {

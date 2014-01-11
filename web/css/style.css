@@ -30,6 +30,23 @@ body {
 	overflow: auto;
 }
 
+#div-logo {
+	height: 50px;
+	padding: 0;
+	text-align: center;
+	margin: 0 auto;
+	background-color: yellow;
+}
+
+#div-user-status {
+	width: 300px;
+	height: 50px;
+	padding: 0;
+	margin: 0 auto;
+	background-color: purple;
+	float: right;
+}
+
 #div-users-list {
 	width: 200px;
 	height: calc(100% - 70px); /* IE9+ and future browsers */
@@ -58,6 +75,13 @@ footer {
 	background-color: #202020;
 }
 
+#p-send-username {
+	color: #888888;
+	font-size: 10pt;
+	vertical-align: middle;
+	margin: 4px 0px 4px 0px;
+}
+
 .div-chat-box {
 	background-color: #999999;
 }
@@ -66,10 +90,15 @@ footer {
 	color: #333333;
 	font-size: 11pt;
 	vertical-align: middle;
+	cursor: pointer;
 	text-align: center;
 	margin: 4px 0px 4px 0px;
 	padding: 3px;
 	background-color: #f4f4f4;
+}
+
+.p-users-list:hover {
+	background-color: #ffffff;
 }
 
 .p-info {
