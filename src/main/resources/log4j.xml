@@ -49,7 +49,7 @@
 		<param name="Threshold" value="INFO"/>
 		<param name="Append" value="false"/>
 		<layout class="org.apache.log4j.PatternLayout">
-			<param name="ConversionPattern" value="%m%n" />
+			<param name="ConversionPattern" value="%d; %m%n" />
 		</layout>
 	</appender>
 	

@@ -26,7 +26,8 @@ body {
 	padding: 0;
 	text-align: center;
 	margin: 0 auto;
-	background-color: green;
+	border-right: 2px solid #333333;
+	background-color: #ffffff;
 	overflow: auto;
 }
 
@@ -54,9 +55,19 @@ body {
 	height: -webkit-calc(100% - 70px); /* Chrome, Safari */
 	padding: 0;
 	margin: 0 auto;
-	background-color: black;
+	background-color: #dff6ff;
 	overflow: auto;
 	float: right;
+}
+
+#p-username-warning {
+	display: none;
+	font-weight: bold;
+	color: red;
+	margin-top: 4px;
+	padding: 4px;
+	border: 2px solid #cccccc;
+	background-color: #ffffff;
 }
 
 header {
@@ -92,13 +103,14 @@ footer {
 	vertical-align: middle;
 	cursor: pointer;
 	text-align: center;
-	margin: 4px 0px 4px 0px;
+	margin: 0;
+	border-bottom: 1px solid #888888;
 	padding: 3px;
-	background-color: #f4f4f4;
+	background-color: #dff6ff;
 }
 
 .p-users-list:hover {
-	background-color: #ffffff;
+	background-color: #beedff!important;
 }
 
 .p-info {

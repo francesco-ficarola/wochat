@@ -1,14 +1,24 @@
-const SUCCESS = 'success';
-const FAIL = 'fail';
+const SUCCESS_CONN = 'success_conn';
+const FAIL_CONN = 'fail_conn';
 const USERS_ADD = "users_add";
 const USERS_REM = "users_rem";
 const GET_CONN_STATUS = 'get_conn_status';
 const NEW_USER_STATUS = 'new_user_status';
 const REG_USER_STATUS = 'reg_user_status';
 const JOIN_CHAT = 'join_chat';
+const DELIVER_MSG = 'deliver_msg';
+const FAIL_DELIVERING = 'fail_delivering';
+
+const p_users_list_DEFAULT_BACKGROUND = '#dff6ff';
+const p_users_list_HOVER_BACKGROUND = '#beedff';
+const p_users_list_CLICKED_BACKGROUND = '#00baff';
 
 var service_location;
 var socket;
+var username;
+var id;
+var recipient_id;
+var recipient_username;
 var div_chat_log;
 var div_users_list;
 
@@ -36,6 +46,16 @@ $(document).ready(function() {
 			$(this).css('background', '#ffffff');
 		});
 		
+		$(document).on('click', '.p-users-list', function() {			
+			if(id != $(this).attr('id')) {
+				$('.p-users-list').css('background-color', p_users_list_DEFAULT_BACKGROUND);
+				$(this).css('background-color', p_users_list_CLICKED_BACKGROUND);
+				
+				recipient_id = $(this).attr('id');
+				recipient_username = $(this).html();
+				console.log('Recipient: ' + recipient_id + ', ' + recipient_username);
+			}
+		});
 	}
 });
 
@@ -87,11 +107,13 @@ function onMessageReceived(e) {
 			else
 			
 			if(jsonMsg.response === REG_USER_STATUS) {
-				var user_status_message = 'You are ' + jsonMsg.data.username;
+				username = jsonMsg.data.username;
+				console.log('My username is: ' + username);
+				var user_status_message = 'You are ' + username;
 				$('#p-send-username').hide().html(user_status_message).fadeIn('slow');
 				
 				// Sending message to join the chat
-				var join_chat_message = '{ "request": "' + JOIN_CHAT + '", "data": { "username": "' + jsonMsg.data.username + '" } }';
+				var join_chat_message = '{ "request": "' + JOIN_CHAT + '", "data": { "username": "' + username + '" } }';
 				sendMessage(join_chat_message);
 			}
 			
@@ -100,6 +122,10 @@ function onMessageReceived(e) {
 			if(jsonMsg.response === USERS_ADD) {
 				var usersList = jsonMsg.data;
 				for(var i=0; i<usersList.length; i++) {
+					if(usersList[i].username === username) {
+						id = usersList[i].id;
+						console.log('My ID is: ' + id);
+					}
 					div_users_list.append('<p class="p-users-list" id="' + usersList[i].id + '">' + usersList[i].username + '</p>');
 				}
 			}
@@ -111,6 +137,18 @@ function onMessageReceived(e) {
 				for(var i=0; i<usersList.length; i++) {
 					$('#' + usersList[i].id).remove();
 				}
+			}
+			
+			else
+			
+			if(jsonMsg.response === DELIVER_MSG) {
+				//TODO
+			}
+			
+			else
+			
+			if(jsonMsg.response === FAIL_DELIVERING) {
+				//TODO
 			}
 		}
 		
@@ -153,18 +191,20 @@ function registrationFormListener(event) {
 			try {
 				var jsonMsg = $.parseJSON(data);
 				if(jsonMsg.response) {
-					// success: username can be choose
-					if(jsonMsg.response === SUCCESS) {
-						var user_status_message = 'You are ' + jsonMsg.data.username;
+					// success_conn: username can be choose
+					if(jsonMsg.response === SUCCESS_CONN) {
+						username = jsonMsg.data.username;
+						console.log('My username is: ' + username);
+						var user_status_message = 'You are ' + username;
 						$('#p-send-username').html(user_status_message);
 						
 						// Sending message to join the chat
-						var join_chat_message = '{ "request": "' + JOIN_CHAT + '", "data": { "username": "' + jsonMsg.data.username + '" } }';
+						var join_chat_message = '{ "request": "' + JOIN_CHAT + '", "data": { "username": "' + username + '" } }';
 						sendMessage(join_chat_message);
 					} else
 					// fail: username already taken
-					if(jsonMsg.response === FAIL) {
-						$('#p-username-exists').text('Your username already exists!').show().fadeOut(2000);
+					if(jsonMsg.response === FAIL_CONN) {
+						$('#p-username-warning').text('Your username already exists!').show().fadeOut(5000);
 					}
 				} else {
 					console.error('The JSON object does not contain the response property');
@@ -174,7 +214,7 @@ function registrationFormListener(event) {
 			}
 		});
 	} else {
-		$('#p-username-exists').text('Please enter a username!').show().fadeOut(2000);
+		$('#p-username-warning').text('Please enter a valid username. Only alphanumeric characters are allowed.').show().fadeOut(5000);
 	}
 }
 

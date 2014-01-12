@@ -13,6 +13,7 @@ import java.util.Set;
 
 public class DataOnTheFly {
 	private Map<String, String> usersMap_IpId;
+	private Map<String, String> usersMap_IdIp;
 	private Set<String> usernamesSet;
 	private Map<String, String> usersMap_IdUsername;
 	private Map<String, ChannelGroup> channelsMap_IpChannelGroup;
@@ -22,6 +23,7 @@ public class DataOnTheFly {
 	public DataOnTheFly() {
 		/** Hashtable is synchronized: just one invocation at time */
 		usersMap_IpId = new Hashtable<String, String>();
+		usersMap_IdIp = new Hashtable<String, String>();
 		usersMap_IdUsername = new Hashtable<String, String>();
 		
 		/** This set is synchronized: just one invocation at time */
@@ -38,6 +40,10 @@ public class DataOnTheFly {
 
 	public Map<String, String> get_usersMap_IpId() {
 		return usersMap_IpId;
+	}
+
+	public Map<String, String> get_usersMap_IdIp() {
+		return usersMap_IdIp;
 	}
 
 	public Set<String> get_usernamesSet() {

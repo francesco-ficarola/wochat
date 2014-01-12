@@ -61,6 +61,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 	
 	private DataOnTheFly data;
 	private Map<String, String> usersMap_IpId;
+	private Map<String, String> usersMap_IdIp;
 	private Set<String> usernamesSet;
 	private Map<String, String> usersMap_IdUsername;
 	private Map<String, ChannelGroup> channelsMap_IpChannelGroup;
@@ -71,6 +72,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		gson = new Gson();
 		this.data = data;
 		this.usersMap_IpId = this.data.get_usersMap_IpId();
+		this.usersMap_IdIp = this.data.get_usersMap_IdIp();
 		this.usernamesSet = this.data.get_usernamesSet();
 		this.usersMap_IdUsername = this.data.get_usersMap_IdUsername();
 		this.channelsMap_IpChannelGroup = this.data.get_channelsMap_IpChannelGroup();
@@ -154,11 +156,11 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 					SingleUserResponse responseJson = new SingleUserResponse();
 					
 					if(!usernamesSet.contains(username)) {
-						responseJson.setResponse(Constants.SUCCESS);
+						responseJson.setResponse(Constants.SUCCESS_CONN);
 						responseJson.setData(new User().setUsername(username));
 						usernamesSet.add(username);
 					} else {
-						responseJson.setResponse(Constants.FAIL);
+						responseJson.setResponse(Constants.FAIL_CONN);
 					}
 					
 					ByteBuf sendingContent = Unpooled.copiedBuffer(gson.toJson(responseJson), CharsetUtil.UTF_8);
@@ -258,29 +260,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		/** Message request on the connection status */
 		if(userReq.getRequest().equals(Constants.GET_CONN_STATUS)) {
-			String remoteHost = getRemoteHost(channel);
-			SingleUserResponse userResp = new SingleUserResponse();
-			
-			logger.debug("Request of connection status by:" + remoteHost);
-			
-			/** If the user's IP address is already registered, then send user info ... */
-			if(usersMap_IpId.containsKey(remoteHost)) {
-				String id = usersMap_IpId.get(remoteHost);
-				String username = usersMap_IdUsername.get(id);
-				User user = new User();
-				user.setId(id).setUsername(username);
-				userResp.setResponse(Constants.REG_USER_STATUS);
-				userResp.setData(user);
-				logger.debug("Sending response to already registered user: " + id + " - " + username);
-			}
-			
-			/** ... otherwise send new_user_status string */
-			else {
-				userResp.setResponse(Constants.NEW_USER_STATUS);
-				logger.debug("Sending response to the new user");
-			}
-			
-			channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)));
+			manageConnectionStatus(channel);
 		}
 		
 		else
@@ -298,8 +278,34 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		/** Messages among users */
 		if(userReq.getRequest().equals(Constants.DELIVER_MSG)) {
-			deliverMsg(userReq);
+			deliverMsg(userReq, channel);
 		}
+	}
+	
+	private void manageConnectionStatus(Channel channel) {
+		String remoteHost = getRemoteHost(channel);
+		SingleUserResponse userResp = new SingleUserResponse();
+		
+		logger.debug("Request of connection status by: " + remoteHost);
+		
+		/** If the user's IP address is already registered, then send user info ... */
+		if(usersMap_IpId.containsKey(remoteHost)) {
+			String id = usersMap_IpId.get(remoteHost);
+			String username = usersMap_IdUsername.get(id);
+			User user = new User();
+			user.setId(id).setUsername(username);
+			userResp.setResponse(Constants.REG_USER_STATUS);
+			userResp.setData(user);
+			logger.debug("Sending response to already registered user: " + id + " - " + username);
+		}
+		
+		/** ... otherwise send new_user_status string */
+		else {
+			userResp.setResponse(Constants.NEW_USER_STATUS);
+			logger.debug("Sending response to the new user");
+		}
+		
+		channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)));
 	}
 	
 	private void manageUsers(Channel channel, String username) {
@@ -343,9 +349,10 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			logger.debug("New IP address");
 			id = String.valueOf(usersMap_IpId.size() + Constants.MIN_USERS_ID_RANGE);
 			usersMap_IpId.put(remoteHost, id);
+			usersMap_IdIp.put(id, remoteHost);
 			usersMap_IdUsername.put(id, username);
 			
-			LogUsersList.logUsersList(remoteHost + "," + id + "," + username);
+			LogUsersList.logUsersList(remoteHost + Constants.CVS_DELIMITER + id + Constants.CVS_DELIMITER + username);
 			LogConnection.logConnection("[NEW CONNECTION]\t(" + id + ", " + username + ") connected. #Channels: 1");
 			
 			/** Broadcast new user to everyone */
@@ -357,7 +364,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		List<User> connectedUsersList = new LinkedList<User>();
 		Set<Map.Entry<String, String>> usersSet = usersMap_IdUsername.entrySet();
 		for (Map.Entry<String, String> userIt : usersSet) {
-			User user = new User().setId(id).setUsername(userIt.getValue());
+			User user = new User().setId(userIt.getKey()).setUsername(userIt.getValue());
 			connectedUsersList.add(user);
 	    }
 		connectedUsersResp.setResponse(Constants.USERS_ADD);
@@ -365,6 +372,49 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		/** Send all users list to the connected user (new or already registered) */
 		channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(connectedUsersResp)));
+	}
+	
+	private void deliverMsg(SingleUserRequest userReq, Channel channel) {
+		String remoteHost = getRemoteHost(channel);
+		
+		User userFrom = userReq.getData();
+		String userIdFrom = userFrom.getId();
+		String userNickFrom = userFrom.getUsername();
+		User userTo = userFrom.getMsg().getReceiver();
+		String userIdTo = userTo.getId();
+		String msgBody = userFrom.getMsg().getBody();
+		
+		/** Check the consistency of connections in DB */
+		checkConsistencyConnectionsInDB(channel, remoteHost, userIdFrom, userNickFrom); //TODO Try cases
+		
+		long currentTimestamp = System.currentTimeMillis() / 1000L;
+		msgCounter = data.getMsgCounter();
+		data.setMsgCounter(msgCounter + 1);
+		String seqHex = "0x" + String.format("%08x", msgCounter & 0xFFFFFFFF);
+		String interaction = "C t=" + currentTimestamp + " ip=0x00000000" + " id=" + userIdFrom + " boot_count=0" + " seq=" + seqHex + "[" + userIdTo + "(0)" + " #1]";
+		LogInteraction.logInteraction(interaction);
+		
+		String message = "(" + currentTimestamp + ") " + "[" + userIdFrom + "," + userIdTo + "] " + "{" + msgBody + "}";
+		LogMessage.logMsg(message);
+		
+		//TODO Try deliver message
+		String receiverIp = usersMap_IdIp.get(userIdTo);
+		ChannelGroup channelsReceiver = channelsMap_IpChannelGroup.get(receiverIp);
+		
+		/** Receiver is disconnected while forwarding a message to him */
+		if(channelsReceiver.size() == 0) {
+			logger.error("Message not delivered. ChannelGroup for IP " + receiverIp + " does not exist");
+			ChannelGroup channelsSender = channelsMap_IpChannelGroup.get(remoteHost);
+			SingleUserResponse userResp = new SingleUserResponse();
+			userResp.setResponse(Constants.FAIL_DELIVERING);
+			channelsSender.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)));
+			return;
+		}
+		
+		SingleUserResponse userResp = new SingleUserResponse();
+		userResp.setResponse(Constants.DELIVER_MSG);
+		userReq.setData(userFrom);
+		channelsReceiver.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)));
 	}
 	
 	private void manageDisconnections(Channel channel) {
@@ -394,26 +444,42 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)), ChannelMatchers.isNot(channel));
 	}
 	
-	private void deliverMsg(SingleUserRequest userReq) {
-		User userFrom = userReq.getData();
-		String userIdFrom = userFrom.getId();
-		String userNickFrom = userFrom.getUsername();
-		User userTo = userFrom.getMsg().getReceiver();
-		String userIdTo = userTo.getId();
-		String userNickTo = userTo.getUsername();
-		String msgBody = userFrom.getMsg().getBody();
+	private void checkConsistencyConnectionsInDB(Channel channel, String remoteHost, String userIdFrom, String userNickFrom) {		
+		/** IP is changed and not in DB */
+		if(!usersMap_IpId.containsKey(remoteHost)) {
+			logger.warn("IP for user " + userIdFrom + " is changed. Updating...");
+			
+			usersMap_IpId.put(remoteHost, userIdFrom);
+			usersMap_IdIp.put(userIdFrom, remoteHost);
+			ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+			channelGroup.add(channel);
+			channelsMap_IpChannelGroup.put(remoteHost, channelGroup);
+			
+			LogUsersList.logUsersList(remoteHost + Constants.CVS_DELIMITER + userIdFrom + Constants.CVS_DELIMITER + userNickFrom + Constants.CVS_DELIMITER + "*");
+			LogConnection.logConnection("[REALLOCATION]\t(" + userIdFrom + ", " + userNickFrom + ") connected. #Channels: 1");
+		}
 		
-		long currentTimestamp = System.currentTimeMillis() / 1000L;
-		msgCounter = data.getMsgCounter();
-		data.setMsgCounter(msgCounter + 1);
-		String seqHex = "0x" + String.format("%08x", msgCounter & 0xFFFFFFFF);
-		String interaction = "C t=" + currentTimestamp + " ip=0x00000000" + " id=" + userIdFrom + " boot_count=0" + " seq=" + seqHex + "[" + userIdTo + "(0)" + " #1]";
-		LogInteraction.logInteraction(interaction);
+		else
 		
-		String message = "[" + currentTimestamp + "] " + "(" + userIdFrom + "," + userIdTo + ") " + "{" + msgBody + "}";
-		LogMessage.logMsg(message);
-		
-		//TODO Forward message to receiver
+		/** The received ID is not equal to the corresponding one registered with that IP */
+		if(!userIdFrom.equals(usersMap_IpId.get(remoteHost))) {
+			logger.warn("IP related to ID " + userIdFrom +  " is changed. Updating...");
+			
+			String oldReferenceId = usersMap_IpId.get(remoteHost);
+			String oldReferenceIp = usersMap_IdIp.get(userIdFrom);
+			usersMap_IdIp.remove(oldReferenceId);
+			usersMap_IpId.remove(oldReferenceIp);
+			channelsMap_IpChannelGroup.remove(oldReferenceIp);
+			
+			usersMap_IdIp.put(userIdFrom, remoteHost);
+			usersMap_IpId.put(remoteHost, userIdFrom);
+			ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+			channelGroup.add(channel);
+			channelsMap_IpChannelGroup.put(remoteHost, channelGroup);
+			
+			LogUsersList.logUsersList(remoteHost + Constants.CVS_DELIMITER + userIdFrom + Constants.CVS_DELIMITER + userNickFrom + Constants.CVS_DELIMITER + "*");
+			LogConnection.logConnection("[REALLOCATION]\t(" + userIdFrom + ", " + userNickFrom + ") connected. #Channels: 1");
+		}
 	}
 	
 	private String getRemoteHost(Channel channel) {
