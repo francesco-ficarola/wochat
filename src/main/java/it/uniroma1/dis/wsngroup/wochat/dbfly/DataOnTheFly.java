@@ -17,6 +17,7 @@ public class DataOnTheFly {
 	private Map<String, String> usersMap_IdUsername;
 	private Map<String, ChannelGroup> channelsMap_IpChannelGroup;
 	private ChannelGroup broadcastChannelGroup;
+	private long msgCounter;
 	
 	public DataOnTheFly() {
 		/** Hashtable is synchronized: just one invocation at time */
@@ -31,6 +32,8 @@ public class DataOnTheFly {
 		
 		/** Set */
 		broadcastChannelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+		
+		msgCounter = 0;
 	}
 
 	public Map<String, String> get_usersMap_IpId() {
@@ -51,5 +54,13 @@ public class DataOnTheFly {
 
 	public ChannelGroup get_broadcastChannelGroup() {
 		return broadcastChannelGroup;
+	}
+
+	public long getMsgCounter() {
+		return msgCounter;
+	}
+
+	public void setMsgCounter(long msgCounter) {
+		this.msgCounter = msgCounter;
 	}
 }

@@ -20,7 +20,7 @@
 	<appender name="Interactions_Log_File" class="org.apache.log4j.DailyRollingFileAppender">
 		<param name="File" value="logs/interactions.log"/>
 		<param name="Threshold" value="INFO"/>
-		<param name="Append" value="true"/>
+		<param name="Append" value="false"/>
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="%m%n" />
 		</layout>
@@ -29,7 +29,25 @@
 	<appender name="Messages_Log_File" class="org.apache.log4j.DailyRollingFileAppender">
 		<param name="File" value="logs/messages.log"/>
 		<param name="Threshold" value="INFO"/>
-		<param name="Append" value="true"/>
+		<param name="Append" value="false"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%m%n" />
+		</layout>
+	</appender>
+	
+	<appender name="Connections_Log_File" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="logs/connections.log"/>
+		<param name="Threshold" value="INFO"/>
+		<param name="Append" value="false"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d %-5p [%F:%L] - %m%n" />
+		</layout>
+	</appender>
+	
+	<appender name="Users_Log_File" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="logs/userslist.log"/>
+		<param name="Threshold" value="INFO"/>
+		<param name="Append" value="false"/>
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="%m%n" />
 		</layout>
@@ -43,6 +61,16 @@
 	<logger name="it.uniroma1.dis.wsngroup.wochat.logging.LogMessage" additivity="false">
 		<level value="INFO" />
 		<appender-ref ref="Messages_Log_File" />
+	</logger>
+	
+	<logger name="it.uniroma1.dis.wsngroup.wochat.logging.LogConnection" additivity="false">
+		<level value="INFO" />
+		<appender-ref ref="Connections_Log_File" />
+	</logger>
+	
+	<logger name="it.uniroma1.dis.wsngroup.wochat.logging.LogUsersList" additivity="false">
+		<level value="INFO" />
+		<appender-ref ref="Users_Log_File" />
 	</logger>
 	
 	<root>

@@ -11,4 +11,5 @@ public class Constants {
 	public static final String JOIN_CHAT = "join_chat";
 	public static final String SUCCESS = "success";
 	public static final String FAIL = "fail";
+	public static final String DELIVER_MSG = "deliver_msg";
 }

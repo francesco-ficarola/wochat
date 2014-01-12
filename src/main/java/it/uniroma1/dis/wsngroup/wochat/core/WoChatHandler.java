@@ -35,10 +35,14 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.DataOnTheFly;
-import it.uniroma1.dis.wsngroup.wochat.dbfly.UserInfo;
-import it.uniroma1.dis.wsngroup.wochat.json.MultiUsersInfoResponse;
-import it.uniroma1.dis.wsngroup.wochat.json.SingleUserInfoRequest;
-import it.uniroma1.dis.wsngroup.wochat.json.SingleUserInfoResponse;
+import it.uniroma1.dis.wsngroup.wochat.dbfly.User;
+import it.uniroma1.dis.wsngroup.wochat.json.MultiUsersResponse;
+import it.uniroma1.dis.wsngroup.wochat.json.SingleUserRequest;
+import it.uniroma1.dis.wsngroup.wochat.json.SingleUserResponse;
+import it.uniroma1.dis.wsngroup.wochat.logging.LogConnection;
+import it.uniroma1.dis.wsngroup.wochat.logging.LogInteraction;
+import it.uniroma1.dis.wsngroup.wochat.logging.LogMessage;
+import it.uniroma1.dis.wsngroup.wochat.logging.LogUsersList;
 import it.uniroma1.dis.wsngroup.wochat.utils.Constants;
 import it.uniroma1.dis.wsngroup.wochat.utils.Functions;
 
@@ -55,19 +59,22 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 	private WebSocketServerHandshaker handshaker;
 	private Gson gson;
 	
+	private DataOnTheFly data;
 	private Map<String, String> usersMap_IpId;
 	private Set<String> usernamesSet;
 	private Map<String, String> usersMap_IdUsername;
 	private Map<String, ChannelGroup> channelsMap_IpChannelGroup;
 	private ChannelGroup broadcastChannelGroup;
+	private long msgCounter;
 	
 	public WoChatHandler(DataOnTheFly data) {
 		gson = new Gson();
-		this.usersMap_IpId = data.get_usersMap_IpId();
-		this.usernamesSet = data.get_usernamesSet();
-		this.usersMap_IdUsername = data.get_usersMap_IdUsername();
-		this.channelsMap_IpChannelGroup = data.get_channelsMap_IpChannelGroup();
-		this.broadcastChannelGroup = data.get_broadcastChannelGroup();
+		this.data = data;
+		this.usersMap_IpId = this.data.get_usersMap_IpId();
+		this.usernamesSet = this.data.get_usernamesSet();
+		this.usersMap_IdUsername = this.data.get_usersMap_IdUsername();
+		this.channelsMap_IpChannelGroup = this.data.get_channelsMap_IpChannelGroup();
+		this.broadcastChannelGroup = this.data.get_broadcastChannelGroup();
 	}
 	
 	public void messageReceived(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -144,11 +151,11 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 				
 				if(splitter.length > 1) {	
 					String username = splitter[1];
-					SingleUserInfoResponse responseJson = new SingleUserInfoResponse();
+					SingleUserResponse responseJson = new SingleUserResponse();
 					
 					if(!usernamesSet.contains(username)) {
 						responseJson.setResponse(Constants.SUCCESS);
-						responseJson.setData(new UserInfo().setUsername(username));
+						responseJson.setData(new User().setUsername(username));
 						usernamesSet.add(username);
 					} else {
 						responseJson.setResponse(Constants.FAIL);
@@ -246,13 +253,13 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 	}
 	
 	private void manageMessages(Channel channel, String jsonReq) {
-		logger.debug(jsonReq);
-		SingleUserInfoRequest userInfoReq = gson.fromJson(jsonReq, SingleUserInfoRequest.class);
+		logger.debug("Request:" + jsonReq);
+		SingleUserRequest userReq = gson.fromJson(jsonReq, SingleUserRequest.class);
 		
 		/** Message request on the connection status */
-		if(userInfoReq.getRequest().equals(Constants.GET_CONN_STATUS)) {
+		if(userReq.getRequest().equals(Constants.GET_CONN_STATUS)) {
 			String remoteHost = getRemoteHost(channel);
-			SingleUserInfoResponse userInfoResp = new SingleUserInfoResponse();
+			SingleUserResponse userResp = new SingleUserResponse();
 			
 			logger.debug("Request of connection status by:" + remoteHost);
 			
@@ -260,31 +267,38 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			if(usersMap_IpId.containsKey(remoteHost)) {
 				String id = usersMap_IpId.get(remoteHost);
 				String username = usersMap_IdUsername.get(id);
-				UserInfo userInfo = new UserInfo();
-				userInfo.setId(id).setUsername(username);
-				userInfoResp.setResponse(Constants.REG_USER_STATUS);
-				userInfoResp.setData(userInfo);
+				User user = new User();
+				user.setId(id).setUsername(username);
+				userResp.setResponse(Constants.REG_USER_STATUS);
+				userResp.setData(user);
 				logger.debug("Sending response to already registered user: " + id + " - " + username);
 			}
 			
 			/** ... otherwise send new_user_status string */
 			else {
-				userInfoResp.setResponse(Constants.NEW_USER_STATUS);
+				userResp.setResponse(Constants.NEW_USER_STATUS);
 				logger.debug("Sending response to the new user");
 			}
 			
-			channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(userInfoResp)));
+			channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)));
 		}
 		
 		else
 		
 		/** Message request to join the chat */
-		if(userInfoReq.getRequest().equals(Constants.JOIN_CHAT)) {
-			UserInfo userInfo = userInfoReq.getData();
-			logger.debug("Request to join chat from: " + userInfo.getUsername());
+		if(userReq.getRequest().equals(Constants.JOIN_CHAT)) {
+			User user = userReq.getData();
+			logger.debug("Request to join the chat from: " + user.getUsername());
 			
 			/** Manage users */
-			manageUsers(channel, userInfo.getUsername());
+			manageUsers(channel, user.getUsername());
+		}
+		
+		else
+		
+		/** Messages among users */
+		if(userReq.getRequest().equals(Constants.DELIVER_MSG)) {
+			deliverMsg(userReq);
 		}
 	}
 	
@@ -314,6 +328,8 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			logger.debug("IP address already registered");
 			id = usersMap_IpId.get(remoteHost);
 			
+			LogConnection.logConnection("[RE-CONNECTION]\t(" + id + ", " + username + ") connected. #Channels: " + channelsMap_IpChannelGroup.get(remoteHost).size());
+			
 			/** The user reloaded the page or he disconnected and connected again using just one browser. */
 			if(channelsMap_IpChannelGroup.get(remoteHost).size() == 1) {
 				
@@ -329,17 +345,20 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			usersMap_IpId.put(remoteHost, id);
 			usersMap_IdUsername.put(id, username);
 			
+			LogUsersList.logUsersList(remoteHost + "," + id + "," + username);
+			LogConnection.logConnection("[NEW CONNECTION]\t(" + id + ", " + username + ") connected. #Channels: 1");
+			
 			/** Broadcast new user to everyone */
 			broadcastUserStatus(id, username, channel, Constants.USERS_ADD);
 		}
 		
 		/** Creating a JSON object including all users connected */
-		MultiUsersInfoResponse connectedUsersResp = new MultiUsersInfoResponse();
-		List<UserInfo> connectedUsersList = new LinkedList<UserInfo>();
+		MultiUsersResponse connectedUsersResp = new MultiUsersResponse();
+		List<User> connectedUsersList = new LinkedList<User>();
 		Set<Map.Entry<String, String>> usersSet = usersMap_IdUsername.entrySet();
-		for (Map.Entry<String, String> user : usersSet) {
-			UserInfo userInfo = new UserInfo().setId(id).setUsername(user.getValue());
-			connectedUsersList.add(userInfo);
+		for (Map.Entry<String, String> userIt : usersSet) {
+			User user = new User().setId(id).setUsername(userIt.getValue());
+			connectedUsersList.add(user);
 	    }
 		connectedUsersResp.setResponse(Constants.USERS_ADD);
 		connectedUsersResp.setData(connectedUsersList);
@@ -356,6 +375,8 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		/** If all user's connections are closed then send an update message to delete user from the list */
 		if(channelsMap_IpChannelGroup.get(remoteHost).size() == 0) {
 			
+			LogConnection.logConnection("[DISCONNECTION]\t(" + id + ", " + username + ") disconnected. #Channels: 0");
+			
 			/** Update the users' list deleting the disconnected user */
 			broadcastUserStatus(id, username, channel, Constants.USERS_REM);
 		}
@@ -363,14 +384,36 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 	
 	private void broadcastUserStatus(String id, String username, Channel channel, String status) {
 		/** Creating a JSON object including just the corresponding new user */
-		MultiUsersInfoResponse userInfoResp = new MultiUsersInfoResponse();
-		List<UserInfo> userList = new LinkedList<UserInfo>();
-		userList.add(new UserInfo().setId(id).setUsername(username));
-		userInfoResp.setResponse(status);
-		userInfoResp.setData(userList);
+		MultiUsersResponse userResp = new MultiUsersResponse();
+		List<User> userList = new LinkedList<User>();
+		userList.add(new User().setId(id).setUsername(username));
+		userResp.setResponse(status);
+		userResp.setData(userList);
 		
 		/** Broadcast new user to everyone (excepting the new user who will processed later) */
-		broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(gson.toJson(userInfoResp)), ChannelMatchers.isNot(channel));
+		broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)), ChannelMatchers.isNot(channel));
+	}
+	
+	private void deliverMsg(SingleUserRequest userReq) {
+		User userFrom = userReq.getData();
+		String userIdFrom = userFrom.getId();
+		String userNickFrom = userFrom.getUsername();
+		User userTo = userFrom.getMsg().getReceiver();
+		String userIdTo = userTo.getId();
+		String userNickTo = userTo.getUsername();
+		String msgBody = userFrom.getMsg().getBody();
+		
+		long currentTimestamp = System.currentTimeMillis() / 1000L;
+		msgCounter = data.getMsgCounter();
+		data.setMsgCounter(msgCounter + 1);
+		String seqHex = "0x" + String.format("%08x", msgCounter & 0xFFFFFFFF);
+		String interaction = "C t=" + currentTimestamp + " ip=0x00000000" + " id=" + userIdFrom + " boot_count=0" + " seq=" + seqHex + "[" + userIdTo + "(0)" + " #1]";
+		LogInteraction.logInteraction(interaction);
+		
+		String message = "[" + currentTimestamp + "] " + "(" + userIdFrom + "," + userIdTo + ") " + "{" + msgBody + "}";
+		LogMessage.logMsg(message);
+		
+		//TODO Forward message to receiver
 	}
 	
 	private String getRemoteHost(Channel channel) {
