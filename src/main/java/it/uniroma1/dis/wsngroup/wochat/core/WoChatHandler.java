@@ -403,7 +403,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		/** Receiver is disconnected while forwarding a message to him */
 		if(channelsReceiver.size() == 0) {
-			logger.error("Message not delivered. ChannelGroup for IP " + receiverIp + " does not exist");
+			logger.error("Message not delivered. ChannelGroup for IP " + receiverIp + " is empty");
 			ChannelGroup channelsSender = channelsMap_IpChannelGroup.get(remoteHost);
 			SingleUserResponse userResp = new SingleUserResponse();
 			userResp.setResponse(Constants.FAIL_DELIVERING);
@@ -419,16 +419,18 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 	
 	private void manageDisconnections(Channel channel) {
 		String remoteHost = getRemoteHost(channel);
-		String id = usersMap_IpId.get(remoteHost);
-		String username = usersMap_IdUsername.get(id);
-		
-		/** If all user's connections are closed then send an update message to delete user from the list */
-		if(channelsMap_IpChannelGroup.get(remoteHost).size() == 0) {
+		if(usersMap_IpId.containsKey(remoteHost) && channelsMap_IpChannelGroup.containsKey(remoteHost)) {
+			String id = usersMap_IpId.get(remoteHost);
+			String username = usersMap_IdUsername.get(id);
 			
-			LogConnection.logConnection("[DISCONNECTION]\t(" + id + ", " + username + ") disconnected. #Channels: 0");
-			
-			/** Update the users' list deleting the disconnected user */
-			broadcastUserStatus(id, username, channel, Constants.USERS_REM);
+			/** If all user's connections are closed then send an update message to delete user from the list */
+			if(channelsMap_IpChannelGroup.get(remoteHost).size() == 0) {
+				
+				LogConnection.logConnection("[DISCONNECTION]\t(" + id + ", " + username + ") disconnected. #Channels: 0");
+				
+				/** Update the users' list deleting the disconnected user */
+				broadcastUserStatus(id, username, channel, Constants.USERS_REM);
+			}
 		}
 	}
 	
