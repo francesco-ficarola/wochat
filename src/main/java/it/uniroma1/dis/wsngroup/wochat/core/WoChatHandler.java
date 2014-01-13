@@ -145,6 +145,25 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		/** New user's connection */
 		if("/newuser".equals(req.getUri())) {
+			
+			/** Already connected (one browser left on the login page and connected with another one) */
+			String remoteHost = getRemoteHost(ctx.channel());
+			if(usersMap_IpId.containsKey(remoteHost)) {
+				logger.info("User already logged in. Just reload its page...");
+				SingleUserResponse responseJson = new SingleUserResponse();
+				responseJson.setResponse(Constants.ALREADY_CONN);
+				
+				ByteBuf sendingContent = Unpooled.copiedBuffer(gson.toJson(responseJson), CharsetUtil.UTF_8);
+				FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, sendingContent);
+				
+				res.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8");
+				setContentLength(res, sendingContent.readableBytes());
+	
+				sendHttpResponse(ctx, req, res);
+				return;
+			}
+			
+			/** New user */
 			ByteBuf receivedContent = req.content();
 			if(receivedContent.isReadable()) {
 				String receivedMsg = receivedContent.toString(CharsetUtil.UTF_8);

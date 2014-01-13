@@ -1,7 +1,8 @@
 const SUCCESS_CONN = 'success_conn';
 const FAIL_CONN = 'fail_conn';
-const USERS_ADD = "users_add";
-const USERS_REM = "users_rem";
+const ALREADY_CONN = 'already_conn';
+const USERS_ADD = 'users_add';
+const USERS_REM = 'users_rem';
 const GET_CONN_STATUS = 'get_conn_status';
 const NEW_USER_STATUS = 'new_user_status';
 const REG_USER_STATUS = 'reg_user_status';
@@ -202,9 +203,13 @@ function registrationFormListener(event) {
 						var join_chat_message = '{ "request": "' + JOIN_CHAT + '", "data": { "username": "' + username + '" } }';
 						sendMessage(join_chat_message);
 					} else
-					// fail: username already taken
+					// fail_conn: username already taken
 					if(jsonMsg.response === FAIL_CONN) {
 						$('#div-username-warning').text('Your username already exists!').show().fadeOut(5000);
+					} else
+					// already_conn: username already logged in with another browser
+					if(jsonMsg.response === ALREADY_CONN) {
+						location.reload(true);
 					}
 				} else {
 					console.error('The JSON object does not contain the response property');

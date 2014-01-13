@@ -12,6 +12,7 @@ public class Constants {
 	public static final String JOIN_CHAT = "join_chat";
 	public static final String SUCCESS_CONN = "success_conn";
 	public static final String FAIL_CONN = "fail_conn";
+	public static final String ALREADY_CONN = "already_conn";
 	public static final String DELIVER_MSG = "deliver_msg";
 	public static final String FAIL_DELIVERING = "fail_delivering";
 }
