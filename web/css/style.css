@@ -43,21 +43,21 @@ body {
 }
 
 #div-messages {
-	position: absolute;
-	top: 10px;
-	bottom: 110px;
-	left: 10px;
-	right: 10px;
+	position: relative;
+	margin: 0;
+	padding: 0;	
 	min-height: 200px;
+	height: calc(100% - 100px); /* IE9+ and future browsers */
+	height: -moz-calc(100% - 100px); /* Firefox */
+	height: -webkit-calc(100% - 100px); /* Chrome, Safari */
 	background-color: green;
 	overflow: auto;
 }
 
 #div-sending {
-	position: absolute;
-	bottom: 10px;
-	left: 10px;
-	right: 10px;
+	position: relative;
+	margin: 0;
+	padding: 0;	
 	height: 100px;
 	background-color: red;
 }
@@ -66,6 +66,8 @@ body {
 	position: relative;
 	width: 300px;
 	height: 50px;
+	text-align: center;
+	vertical-align: middle;
 	padding: 0;
 	margin: 0;
 	background-color: purple;
@@ -85,14 +87,28 @@ body {
 	float: right;
 }
 
-#p-username-warning {
+#div-username-warning {
 	display: none;
+	position: fixed;
+	max-width: 220px;
 	font-weight: bold;
 	color: red;
-	margin-top: 4px;
+	top: 45px;
+	left: 80%;
+	right: 30px;
 	padding: 4px;
 	border: 2px solid #cccccc;
 	background-color: #ffffff;
+	z-index: 1;
+	overflow: auto;
+}
+
+#user-input-box {
+	width: 150px;
+}
+
+#user-submit-button {
+	width: 70px;
 }
 
 header {
@@ -115,7 +131,6 @@ footer {
 	color: #888888;
 	font-size: 10pt;
 	vertical-align: middle;
-	margin: 4px 0px 4px 0px;
 }
 
 .div-chat-box {

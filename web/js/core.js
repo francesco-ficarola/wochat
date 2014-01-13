@@ -97,7 +97,7 @@ function onMessageReceived(e) {
 				var registration_form = '\
 							<form name="form-send-username" id="form-send-username" action="#">\
 								<input type="text" name="user-input-box" id="user-input-box" placeholder="Your username here..." maxlength="20" />\
-								<input type="submit" name="user-submit" id="user-submit" value="Connect" style="width:60px;" onfocus="this.blur();" />\
+								<input type="submit" name="user-submit-button" id="user-submit-button" value="Connect" onfocus="this.blur();" />\
 							</form>\
 							';
 				$('#p-send-username').hide().html(registration_form).fadeIn('slow');
@@ -204,7 +204,7 @@ function registrationFormListener(event) {
 					} else
 					// fail: username already taken
 					if(jsonMsg.response === FAIL_CONN) {
-						$('#p-username-warning').text('Your username already exists!').show().fadeOut(5000);
+						$('#div-username-warning').text('Your username already exists!').show().fadeOut(5000);
 					}
 				} else {
 					console.error('The JSON object does not contain the response property');
@@ -214,7 +214,7 @@ function registrationFormListener(event) {
 			}
 		});
 	} else {
-		$('#p-username-warning').text('Please enter a valid username. Only alphanumeric characters are allowed.').show().fadeOut(5000);
+		$('#div-username-warning').text('Please enter a valid username. Only alphanumeric characters are allowed.').show().fadeOut(5000);
 	}
 }
 
