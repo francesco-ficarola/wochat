@@ -6,7 +6,7 @@ html, body {
 
 body {
 	font-family: arial, helvetica, sans-serif;
-	font-size: 9pt;
+	font-size: 10pt;
 	color: #333333;
 }
 
@@ -60,7 +60,7 @@ body {
 	height: calc(100% - 70px); /* IE9+ and future browsers */
 	height: -moz-calc(100% - 70px); /* Firefox */
 	height: -webkit-calc(100% - 70px); /* Chrome, Safari */
-	background-color: #f4f4f4;
+	background-color: #f5f5f5;
 	overflow: auto;
 }
 
@@ -159,18 +159,33 @@ footer {
 	overflow: hidden;
 }
 
-.p-chat-message {
-	line-height: 30px;
-	margin: 15px 0px 15px 20px;
+.div-chat-user-msg {
+	position: relative;
+	left: 20px;
+	width: 90%;
+	padding: 0;
+	margin: 15px 0px 15px 0px;
+	border-bottom: 1px solid #888;
+	overflow: auto;
 }
 
-.p-chat-message span {
+.div-chat-username {
+	position: relative;
+	max-width: 200px;
 	font-weight: bold;
-	padding: 3px;
+	padding: 7px;
 	color: #fff;
-	margin-right: 0px;
-	border: 1px solid #333;
 	background-color: #333399;
+	overflow: auto;
+	float: left;
+}
+
+.div-chat-message {
+	position: relative;
+	min-height: 30px;
+	padding: 0px 10px 10px 10px;
+	border-right: 1px solid #888;
+	overflow: auto;
 }
 
 .p-info {

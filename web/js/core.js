@@ -22,7 +22,6 @@ var recipient_id;
 var recipient_username;
 var div_chat_log;
 var div_users_list;
-var counter = 0;
 
 
 $(document).ready(function() {
@@ -77,7 +76,16 @@ $(document).ready(function() {
 				if($('#div-' + recipient_id).exists()) {
 					console.log('#div-' + recipient_id + ' already exists...');
 					var $recipient_div = $('#div-' + recipient_id);
-					$recipient_div.append('<p class="p-chat-message"><span>pippo</span> ' + counter++ + '<br />' + counter +'</p>');
+					var msg_body = '\
+							<div class="div-chat-user-msg">\
+								<div class="div-chat-username">\
+									pippoasdasd\
+								</div>\
+								<div class="div-chat-message">\
+									aaaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbb\
+								</div>\
+							</div>';
+					$recipient_div.append(msg_body);
 					$recipient_div.css('display', 'block');
 					$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 500); // must be after display:block property
 				} else {
