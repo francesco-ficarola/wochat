@@ -1,7 +1,7 @@
 WoChat
 ======
 
-A *web socket*-based chat for **Wisdom of Crowds** experiments. Server has been developed in Java using Netty, while client has been written in Javascript using JQuery.
+A *WebSocket*-based chat for **Wisdom of Crowds** experiments. Server has been developed in Java using Netty, while client has been written in Javascript using JQuery.
 
 Building and Running
 --------------------

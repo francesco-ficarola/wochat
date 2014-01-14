@@ -22,6 +22,7 @@ var recipient_id;
 var recipient_username;
 var div_chat_log;
 var div_users_list;
+var counter = 0;
 
 
 $(document).ready(function() {
@@ -33,6 +34,12 @@ $(document).ready(function() {
 		$(document.body).html('<p style="color:red; text-align:center; font-weight:bold;">Error: Your browser or device does not support Web Socket. Try Google Chrome!</p>');
 	
 	} else {
+		// Function exists
+		$.fn.exists = function() { return this.length>0; }
+		
+		// Disable input, textarea and sending button in the chatroom div before logging:
+		$("#div-chatroom").find('input,textarea,button').prop('disabled', true);
+	
 		// Web Socket connection
 		var url_domain = document.domain;
 		service_location = 'ws://' + url_domain + ':8080/chat';
@@ -47,6 +54,11 @@ $(document).ready(function() {
 			$(this).css('background', '#ffffff');
 		});
 		
+		$(document).on('mousewheel', '.div-chat-text', function (e, delta){
+			this.scrollTop += (delta < 0 ? 1 : -1) * 30;
+			e.preventDefault();
+		});
+		
 		$(document).on('click', '.p-users-list', function() {			
 			if(id != $(this).attr('id')) {
 				$('.p-users-list').css('background-color', p_users_list_DEFAULT_BACKGROUND);
@@ -55,8 +67,37 @@ $(document).ready(function() {
 				recipient_id = $(this).attr('id');
 				recipient_username = $(this).html();
 				console.log('Recipient: ' + recipient_id + ', ' + recipient_username);
+				
+				var chat_title = 'Chatting with ' + recipient_username + '...';
+				$('#span-chat-title').hide().html(chat_title).fadeIn('slow');
+				
+				// Hide all previous chat box
+				$('.div-chat-text').css('display', 'none');
+				
+				if($('#div-' + recipient_id).exists()) {
+					console.log('#div-' + recipient_id + ' already exists...');
+					var $recipient_div = $('#div-' + recipient_id);
+					$recipient_div.append('<p class="p-chat-message"><span>pippo</span> ' + counter++ + '<br />' + counter +'</p>');
+					$recipient_div.css('display', 'block');
+					$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 500); // must be after display:block property
+				} else {
+					console.log('div-' + recipient_id + ' does not exist. Building...');
+					var recipient_div_html = '<div id="div-' + recipient_id + '" class="div-chat-text"></div>';
+					$('#div-chat-box').append(recipient_div_html);
+					var $recipient_div = $('#div-' + recipient_id);
+					$recipient_div.css('display', 'block');
+					$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 500); // must be after display:block property
+				}
 			}
 		});
+		
+		$('#form-send-message').submit(function() {
+			if(recipient_id != undefined) {
+				
+			}
+		});
+
+		//TODO $('.div-chat-text').scrollTop(9999);
 	}
 });
 
@@ -96,26 +137,20 @@ function onMessageReceived(e) {
 		if(jsonMsg.response) {
 			if(jsonMsg.response === NEW_USER_STATUS) {
 				var registration_form = '\
-							<form name="form-send-username" id="form-send-username" action="#">\
+							<form name="form-send-username" id="form-send-username">\
 								<input type="text" name="user-input-box" id="user-input-box" placeholder="Your username here..." maxlength="20" />\
 								<input type="submit" name="user-submit-button" id="user-submit-button" value="Connect" onfocus="this.blur();" />\
 							</form>\
 							';
 				$('#p-send-username').hide().html(registration_form).fadeIn('slow');
+				$('#user-input-box').focus();
 				$('#form-send-username').on('submit', registrationFormListener);
 			}
 			
 			else
 			
 			if(jsonMsg.response === REG_USER_STATUS) {
-				username = jsonMsg.data.username;
-				console.log('My username is: ' + username);
-				var user_status_message = 'You are ' + username;
-				$('#p-send-username').hide().html(user_status_message).fadeIn('slow');
-				
-				// Sending message to join the chat
-				var join_chat_message = '{ "request": "' + JOIN_CHAT + '", "data": { "username": "' + username + '" } }';
-				sendMessage(join_chat_message);
+				loggedin(jsonMsg.data.username);
 			}
 			
 			else
@@ -194,14 +229,7 @@ function registrationFormListener(event) {
 				if(jsonMsg.response) {
 					// success_conn: username can be choose
 					if(jsonMsg.response === SUCCESS_CONN) {
-						username = jsonMsg.data.username;
-						console.log('My username is: ' + username);
-						var user_status_message = 'You are ' + username;
-						$('#p-send-username').html(user_status_message);
-						
-						// Sending message to join the chat
-						var join_chat_message = '{ "request": "' + JOIN_CHAT + '", "data": { "username": "' + username + '" } }';
-						sendMessage(join_chat_message);
+						loggedin(jsonMsg.data.username);
 					} else
 					// fail_conn: username already taken
 					if(jsonMsg.response === FAIL_CONN) {
@@ -221,6 +249,22 @@ function registrationFormListener(event) {
 	} else {
 		$('#div-username-warning').text('Please enter a valid username. Only alphanumeric characters are allowed.').show().fadeOut(5000);
 	}
+}
+
+
+function loggedin(json_username) {
+	$("#div-chatroom").find('input,textarea,button').prop('disabled', false);
+	username = json_username;
+	console.log('My username is: ' + username);
+	var user_status_message = 'You are ' + username;
+	$('#p-send-username').html(user_status_message);
+	
+	// Sending message to join the chat
+	var join_chat_message = '{ "request": "' + JOIN_CHAT + '", "data": { "username": "' + username + '" } }';
+	sendMessage(join_chat_message);
+	
+	var chat_title = 'Click on a user in the users\' list and start chatting!';
+	$('#span-chat-title').hide().html(chat_title).fadeIn('slow');
 }
 
 

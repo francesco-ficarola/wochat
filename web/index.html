@@ -9,6 +9,7 @@
 	<link rel="stylesheet" href="css/style.css" type="text/css" />
 	
 	<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+	<script type="text/javascript" src="js/mousewheel.js"></script>
 	<script type="text/javascript" src="js/core.js"></script>
 </head>
 
@@ -16,7 +17,7 @@
 	<header>
 		<!-- IMPORTANT: right div (i.e., div-user-status) before left div (i.e., div-logo) -->
 		<div id="div-user-status">
-			<p id="p-send-username" />
+			<p id="p-send-username"></p>
 		</div>
 		<div id="div-logo">
 			LOGO HERE
@@ -28,8 +29,16 @@
 	<!-- IMPORTANT: right div (i.e., div-users-list) before left div (i.e., div-chatroom) -->
 	<div id="div-users-list"></div>
 	<div id="div-chatroom">
-		<div id="div-messages"></div>
-		<div id="div-sending"></div>
+		<div id="div-messages">
+			<p id="p-chat-title"><span id="span-chat-title"></span></p>
+			<div id="div-chat-box"></div>
+		</div>
+		<div id="div-sending">
+			<form name="form-send-message" id="form-send-message">
+				<textarea id='ta-message' name='ta-message'></textarea>
+				<input type="submit" name="submit-message" id="submit-message" value="Send" onfocus="this.blur();" />
+			</form>
+		</div>
 	</div>
 	<footer>Copyright</footer>
 </body>
