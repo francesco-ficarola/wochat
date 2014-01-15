@@ -14,6 +14,7 @@ const FORWARD_TO_OTHER_CHANNELS = 'forward_to_other_channels';
 const p_users_list_DEFAULT_BACKGROUND = '#dff6ff';
 const p_users_list_HOVER_BACKGROUND = '#beedff';
 const p_users_list_CLICKED_BACKGROUND = '#00baff';
+const p_users_list_NEW_MESSAGE_BACKGROUND = '#beedff';
 
 var service_location;
 var socket;
@@ -69,7 +70,8 @@ $(document).ready(function() {
 				$(this).css('font-weight', 'bold');
 				
 				recipient_id = $(this).attr('id');
-				recipient_username = $(this).html();
+				recipient_username = $(this).attr('title');
+				$(this).html(recipient_username);
 				console.log('Recipient: ' + recipient_id + ', ' + recipient_username);
 				
 				var chat_title = 'Chatting with ' + recipient_username + '...';
@@ -79,6 +81,8 @@ $(document).ready(function() {
 				$('.div-chat-text').css('display', 'none');
 				
 				checkRecipientDiv(recipient_id, true);
+				$recipient_div = $('#div-' + recipient_id);
+				$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 				
 				$('#ta-message').focus();
 			}
@@ -98,7 +102,7 @@ $(document).ready(function() {
 								<div class="div-chat-message">' + msg_body + '</div>\
 							</div>';
 					$recipient_div.append(msg_struct);
-					$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 500);
+					$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 					$textarea.val('');
 					$textarea.focus();
 					
@@ -189,7 +193,7 @@ function onMessageReceived(e) {
 						id = usersList[i].id;
 						console.log('My ID is: ' + id);
 					}
-					div_users_list.append('<p class="p-users-list" id="' + usersList[i].id + '">' + usersList[i].username + '</p>');
+					div_users_list.append('<p class="p-users-list" id="' + usersList[i].id + '" title="' + usersList[i].username + '">' + usersList[i].username + '</p>');
 				}
 			}
 			
@@ -213,11 +217,10 @@ function onMessageReceived(e) {
 				
 				if(id === my_received_id) {
 					
-					// Move element to top
-					$('#' + id_from).parent().prepend($('#' + id_from));
-					$('#' + id_from).css('background-color', '#ff00ff');
-					
-					//TODO Choose a better color for new messages paragraph and add a counter of new messages
+					// Move element to top and set a different background color
+					var $recipient_p = $('#' + id_from);
+					$recipient_p.parent().prepend($('#' + id_from));
+					$recipient_p.css('background-color', p_users_list_NEW_MESSAGE_BACKGROUND);
 					
 					// If I still don't have active chats or if I'm already chatting with user sending this message
 					if(recipient_id === undefined || recipient_id === id_from) {
@@ -227,17 +230,26 @@ function onMessageReceived(e) {
 					// I'm chatting with someone else...
 					else {
 						checkRecipientDiv(id_from, false);
+					
+						// Adding the number of messages received from a user next to the sender's username
+						if($('#counter-' + id_from).exists()) {
+							var current_msg_counter = $('#counter-' + id_from).html().replaceAll('(', '').replaceAll(')', '');
+							current_msg_counter++;
+							$('#counter-' + id_from).html('('+ current_msg_counter +')');
+						} else {
+							$recipient_p.append(' <span id="counter-' + id_from + '">(1)</span>');
+						}
 					}
 					
 					var msg_body = msg_json.body;
 					var $recipient_div = $('#div-' + id_from);
 					var msg_struct = '\
 							<div class="div-chat-user-msg">\
-								<div class="div-chat-username">' + username_from + '</div>\
+								<div class="div-chat-username" style="background-color:#009966;">' + username_from + '</div>\
 								<div class="div-chat-message">' + msg_body + '</div>\
 							</div>';
 					$recipient_div.append(msg_struct);
-					$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 500);
+					$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 					
 				} else {
 					console.error('Something went wrong. ID (' + id + ') and received ID (' + my_received_id + ') are not equal!');
@@ -289,7 +301,6 @@ function sendMessage(message) {
 function registrationFormListener(event) {
 	event.preventDefault();
 	console.log($('#user-input-box').val());
-	//FIXME
 	if($('#user-input-box').val().match(/^\w+$/)) {
 		// Send the data using post
 		var posting = $.post('/newuser', { username: $('#user-input-box').val() });
@@ -327,7 +338,7 @@ function loggedin(json_username) {
 	$("#div-chatroom").find('input,textarea,button').prop('disabled', false);
 	username = json_username;
 	console.log('My username is: ' + username);
-	var user_status_message = 'You are ' + username;
+	var user_status_message = 'You are <span style="color:red;">' + username + '</span>';
 	$('#p-send-username').html(user_status_message);
 	
 	// Sending message to join the chat
