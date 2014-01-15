@@ -15,4 +15,5 @@ public class Constants {
 	public static final String ALREADY_CONN = "already_conn";
 	public static final String DELIVER_MSG = "deliver_msg";
 	public static final String FAIL_DELIVERING = "fail_delivering";
+	public static final String FORWARD_TO_OTHER_CHANNELS = "forward_to_other_channels";
 }

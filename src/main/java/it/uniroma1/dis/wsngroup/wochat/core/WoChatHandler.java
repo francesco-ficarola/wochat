@@ -393,8 +393,9 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(connectedUsersResp)));
 	}
 	
-	private void deliverMsg(SingleUserRequest userReq, Channel channel) {
+	private void deliverMsg(SingleUserRequest userReq, Channel channel) {		
 		String remoteHost = getRemoteHost(channel);
+		ChannelGroup channelsSender = channelsMap_IpChannelGroup.get(remoteHost);
 		
 		User userFrom = userReq.getData();
 		String userIdFrom = userFrom.getId();
@@ -403,8 +404,17 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		String userIdTo = userTo.getId();
 		String msgBody = userFrom.getMsg().getBody();
 		
+		/** Req message must be forwarded to other opened channels of sender */
+		if(channelsSender.size() > 1) {
+			SingleUserResponse forwardResp = new SingleUserResponse();
+			forwardResp.setResponse(Constants.FORWARD_TO_OTHER_CHANNELS);
+			forwardResp.setData(userFrom);
+			channelsSender.writeAndFlush(new TextWebSocketFrame(gson.toJson(forwardResp)), ChannelMatchers.isNot(channel));
+		}
+		
 		/** Check the consistency of connections in DB */
-		checkConsistencyConnectionsInDB(channel, remoteHost, userIdFrom, userNickFrom); //TODO Try cases
+		//TODO Try cases
+		checkConsistencyConnectionsInDB(channel, remoteHost, userIdFrom, userNickFrom);
 		
 		long currentTimestamp = System.currentTimeMillis() / 1000L;
 		msgCounter = data.getMsgCounter();
@@ -423,7 +433,6 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		/** Receiver is disconnected while forwarding a message to him */
 		if(channelsReceiver.size() == 0) {
 			logger.error("Message not delivered. ChannelGroup for IP " + receiverIp + " is empty");
-			ChannelGroup channelsSender = channelsMap_IpChannelGroup.get(remoteHost);
 			SingleUserResponse userResp = new SingleUserResponse();
 			userResp.setResponse(Constants.FAIL_DELIVERING);
 			channelsSender.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)));
@@ -432,7 +441,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		SingleUserResponse userResp = new SingleUserResponse();
 		userResp.setResponse(Constants.DELIVER_MSG);
-		userReq.setData(userFrom);
+		userResp.setData(userFrom);
 		channelsReceiver.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)));
 	}
 	

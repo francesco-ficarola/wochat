@@ -72,6 +72,30 @@ body {
 	background-color: red;
 }
 
+#div-system-msg {
+	display: none;
+	position: fixed;
+	background-color: #000000;
+	z-index: 1;
+	width: 100%;
+	height: 100%;
+	overflow: auto;
+	opacity: 0.95;
+	filter:alpha(opacity=90);
+	filter:"alpha(opacity=90)";
+	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(opacity=90)";
+	filter: progid:DXImageTransform.Microsoft.Alpha(opacity=90);
+}
+
+#div-system-msg-container {
+	color: #00ff00;
+	font-size: 12pt;
+	font-weight: bold;
+	margin-top: 20%;
+	margin-left: auto;
+	margin-right: auto;
+}
+
 #div-user-status {
 	position: relative;
 	width: 300px;

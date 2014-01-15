@@ -9,6 +9,7 @@ const REG_USER_STATUS = 'reg_user_status';
 const JOIN_CHAT = 'join_chat';
 const DELIVER_MSG = 'deliver_msg';
 const FAIL_DELIVERING = 'fail_delivering';
+const FORWARD_TO_OTHER_CHANNELS = 'forward_to_other_channels';
 
 const p_users_list_DEFAULT_BACKGROUND = '#dff6ff';
 const p_users_list_HOVER_BACKGROUND = '#beedff';
@@ -73,39 +74,39 @@ $(document).ready(function() {
 				// Hide all previous chat box
 				$('.div-chat-text').css('display', 'none');
 				
-				if($('#div-' + recipient_id).exists()) {
-					console.log('#div-' + recipient_id + ' already exists...');
-					var $recipient_div = $('#div-' + recipient_id);
-					var msg_body = '\
-							<div class="div-chat-user-msg">\
-								<div class="div-chat-username">\
-									pippoasdasd\
-								</div>\
-								<div class="div-chat-message">\
-									aaaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbb\
-								</div>\
-							</div>';
-					$recipient_div.append(msg_body);
-					$recipient_div.css('display', 'block');
-					$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 500); // must be after display:block property
-				} else {
-					console.log('div-' + recipient_id + ' does not exist. Building...');
-					var recipient_div_html = '<div id="div-' + recipient_id + '" class="div-chat-text"></div>';
-					$('#div-chat-box').append(recipient_div_html);
-					var $recipient_div = $('#div-' + recipient_id);
-					$recipient_div.css('display', 'block');
-					$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 500); // must be after display:block property
-				}
+				checkRecipientDiv(recipient_id, true);
+				
+				$('#ta-message').focus();
 			}
 		});
 		
-		$('#form-send-message').submit(function() {
+		$('#form-send-message').submit(function(event) {
+			event.preventDefault();
 			if(recipient_id != undefined) {
-				
+				var $textarea = $('#ta-message');
+				var msg_body = $textarea.val().trim();
+				if(msg_body != '') {
+					msg_body = htmlEscape(msg_body);
+					var $recipient_div = $('#div-' + recipient_id);
+					var msg_struct = '\
+							<div class="div-chat-user-msg">\
+								<div class="div-chat-username">' + username + '</div>\
+								<div class="div-chat-message">' + msg_body + '</div>\
+							</div>';
+					$recipient_div.append(msg_struct);
+					$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 500);
+					$textarea.val('');
+					$textarea.focus();
+					
+					var json_data = '{"request": "' + DELIVER_MSG + '", "data": {"id": "' + id + '", "username": "' + username + '", "msg": {"receiver": {"id": "' + recipient_id + '", "username": "' + recipient_username + '"}, "body": "' + msg_body + '"}}}';
+					sendMessage(json_data);
+				}
+			} else {
+				var chat_title = 'Click on a user in the users\' list and start chatting!';
+				$('#span-chat-title').hide().html(chat_title).fadeIn('slow');
+				console.warn("recipient_id is undefined!");
 			}
 		});
-
-		//TODO $('.div-chat-text').scrollTop(9999);
 	}
 });
 
@@ -131,6 +132,20 @@ function onSocketOpen(e) {
 
 function onSocketClose(e) {
 	console.log('Web Socket closed.');
+	var system_msg = 'Server went down. Thank you!';
+	var table_loading = '\
+				<div id="div-system-msg-container">\
+					<table style="margin-left:auto; margin-right:auto; text-align:center;">\
+						<tr>\
+							<td>\
+								<p>' + system_msg + '</p>\
+							</td>\
+						</tr>\
+					</table>\
+				</div>';
+
+	$('#div-system-msg').html(table_loading);
+	$('#div-system-msg').css('display', 'block');
 }
 
 
@@ -186,13 +201,40 @@ function onMessageReceived(e) {
 			else
 			
 			if(jsonMsg.response === DELIVER_MSG) {
-				//TODO
+				var jsonUser = jsonMsg.data;
+				var id_from = jsonUser.id;
+				var username_from = jsonUser.username;
+				var msg_json = jsonUser.msg;
+				var my_received_id = msg_json.receiver.id;
+				
+				if(id === my_received_id) {
+					checkRecipientDiv(id_from, false);
+					
+					var msg_body = msg_json.body;
+					var $recipient_div = $('#div-' + id_from);
+					var msg_struct = '\
+							<div class="div-chat-user-msg">\
+								<div class="div-chat-username">' + username_from + '</div>\
+								<div class="div-chat-message">' + msg_body + '</div>\
+							</div>';
+					$recipient_div.append(msg_struct);
+					$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 500);
+					
+				} else {
+					console.error('Something went wrong. ID (' + id + ') and received ID (' + my_received_id + ') are not equal!');
+				}
 			}
 			
 			else
 			
 			if(jsonMsg.response === FAIL_DELIVERING) {
 				//TODO
+			}
+			
+			else
+			
+			if(jsonMsg.response === FORWARD_TO_OTHER_CHANNELS) {
+				//TODO Message just sent must appear on all opened browsers
 			}
 		}
 		
@@ -276,8 +318,45 @@ function loggedin(json_username) {
 }
 
 
+function checkRecipientDiv(receiver_id, display) {
+	var $recipient_div;
+	
+	if($('#div-' + receiver_id).exists()) {
+		console.log('#div-' + receiver_id + ' already exists...');
+		$recipient_div = $('#div-' + receiver_id);
+	} else {
+		console.log('div-' + receiver_id + ' does not exist. Building...');
+		var recipient_div_html = '<div id="div-' + receiver_id + '" class="div-chat-text"></div>';
+		$('#div-chat-box').append(recipient_div_html);
+		$recipient_div = $('#div-' + receiver_id);
+	}
+	
+	if(display === true) {
+		$recipient_div.css('display', 'block');
+	} else {
+		// If there's no active chat or if the active chat is the owner of the corresponding received msg
+		if(recipient_id === undefined || recipient_id === receiver_id) {
+			$recipient_div.css('display', 'block');
+			if(recipient_id === undefined) recipient_id = receiver_id;
+		} else {
+			$recipient_div.css('display', 'none');
+		}
+	}
+}
+
+
+function htmlEscape(value) {
+	return $('<div />').text(value).html().replaceAll('\n', '<br />').replaceAll('"', '&quot;').replaceAll('\'', '&#39;');
+}
+
+
 function chatLog(msg, classCSS) {
 	div_chat_log.append('<p class="' + classCSS + '">' + msg + '</p>');
 	var height = div_chat_log[0].scrollHeight;
 	div_chat_log.scrollTop(height);
 }
+
+String.prototype.replaceAll = function(str1, str2, ignore) 
+{
+	return this.replace(new RegExp(str1.replace(/([\/\,\!\\\^\$\{\}\[\]\(\)\.\*\+\?\|\<\>\-\&])/g,"\\$&"),(ignore?"gi":"g")),(typeof(str2)=="string")?str2.replace(/\$/g,"$$$$"):str2);
+};
