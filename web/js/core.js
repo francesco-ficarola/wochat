@@ -290,7 +290,7 @@ function registrationFormListener(event) {
 	event.preventDefault();
 	console.log($('#user-input-box').val());
 	//FIXME
-	if($('#user-input-box').val().match(/\w+/)) {
+	if($('#user-input-box').val().match(/^\w+$/)) {
 		// Send the data using post
 		var posting = $.post('/newuser', { username: $('#user-input-box').val() });
 		posting.done(function(data) {
