@@ -62,7 +62,11 @@ $(document).ready(function() {
 		$(document).on('click', '.p-users-list', function() {			
 			if(id != $(this).attr('id')) {
 				$('.p-users-list').css('background-color', p_users_list_DEFAULT_BACKGROUND);
+				$('.p-users-list').css('color', '#333');
+				$('.p-users-list').css('font-weight', 'normal');
 				$(this).css('background-color', p_users_list_CLICKED_BACKGROUND);
+				$(this).css('color', '#fff');
+				$(this).css('font-weight', 'bold');
 				
 				recipient_id = $(this).attr('id');
 				recipient_username = $(this).html();
@@ -161,7 +165,7 @@ function onMessageReceived(e) {
 			if(jsonMsg.response === NEW_USER_STATUS) {
 				var registration_form = '\
 							<form name="form-send-username" id="form-send-username">\
-								<input type="text" name="user-input-box" id="user-input-box" placeholder="Your username here..." maxlength="20" />\
+								<input type="text" name="user-input-box" id="user-input-box" placeholder="Your username here..." maxlength="15" />\
 								<input type="submit" name="user-submit-button" id="user-submit-button" value="Connect" onfocus="this.blur();" />\
 							</form>\
 							';
@@ -208,7 +212,22 @@ function onMessageReceived(e) {
 				var my_received_id = msg_json.receiver.id;
 				
 				if(id === my_received_id) {
-					checkRecipientDiv(id_from, false);
+					
+					// Move element to top
+					$('#' + id_from).parent().prepend($('#' + id_from));
+					$('#' + id_from).css('background-color', '#ff00ff');
+					
+					//TODO Choose a better color for new messages paragraph and add a counter of new messages
+					
+					// If I still don't have active chats or if I'm already chatting with user sending this message
+					if(recipient_id === undefined || recipient_id === id_from) {
+						$('#' + id_from).trigger('click');
+					}
+					
+					// I'm chatting with someone else...
+					else {
+						checkRecipientDiv(id_from, false);
+					}
 					
 					var msg_body = msg_json.body;
 					var $recipient_div = $('#div-' + id_from);
@@ -269,6 +288,8 @@ function sendMessage(message) {
 
 function registrationFormListener(event) {
 	event.preventDefault();
+	console.log($('#user-input-box').val());
+	//FIXME
 	if($('#user-input-box').val().match(/\w+/)) {
 		// Send the data using post
 		var posting = $.post('/newuser', { username: $('#user-input-box').val() });
@@ -334,13 +355,7 @@ function checkRecipientDiv(receiver_id, display) {
 	if(display === true) {
 		$recipient_div.css('display', 'block');
 	} else {
-		// If there's no active chat or if the active chat is the owner of the corresponding received msg
-		if(recipient_id === undefined || recipient_id === receiver_id) {
-			$recipient_div.css('display', 'block');
-			if(recipient_id === undefined) recipient_id = receiver_id;
-		} else {
-			$recipient_div.css('display', 'none');
-		}
+		$recipient_div.css('display', 'none');
 	}
 }
 

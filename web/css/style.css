@@ -110,7 +110,7 @@ body {
 
 #div-users-list {
 	position: relative;
-	width: 200px;
+	width: 250px;
 	height: calc(100% - 70px); /* IE9+ and future browsers */
 	height: -moz-calc(100% - 70px); /* Firefox */
 	height: -webkit-calc(100% - 70px); /* Chrome, Safari */
@@ -226,7 +226,7 @@ footer {
 }
 
 .p-users-list {
-	color: #333333;
+	color: #333;
 	font-size: 11pt;
 	vertical-align: middle;
 	cursor: pointer;
