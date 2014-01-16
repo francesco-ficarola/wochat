@@ -232,6 +232,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		if (frame instanceof PingWebSocketFrame) {
 			ctx.channel().write(new PongWebSocketFrame(frame.content().retain()));
+			logger.debug("Ping-Pong frames...");
 			return;
 		}
 		
@@ -353,7 +354,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			logger.debug("IP address already registered");
 			id = usersMap_IpId.get(remoteHost);
 			
-			LogConnection.logConnection("[RE-CONNECTION]\t(" + id + ", " + username + ") connected. #Channels: " + channelsMap_IpChannelGroup.get(remoteHost).size());
+			LogConnection.logConnection("[RE-CONNECTION]\t(" + remoteHost + ", " + id + ", " + username + ") connected. #Channels: " + channelsMap_IpChannelGroup.get(remoteHost).size());
 			
 			/** The user reloaded the page or he disconnected and connected again using just one browser. */
 			if(channelsMap_IpChannelGroup.get(remoteHost).size() == 1) {
@@ -372,7 +373,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			usersMap_IdUsername.put(id, username);
 			
 			LogUsersList.logUsersList(remoteHost + Constants.CVS_DELIMITER + id + Constants.CVS_DELIMITER + username);
-			LogConnection.logConnection("[NEW CONNECTION]\t(" + id + ", " + username + ") connected. #Channels: 1");
+			LogConnection.logConnection("[NEW CONNECTION]\t(" + remoteHost + ", " + id + ", " + username + ") connected. #Channels: 1");
 			
 			/** Broadcast new user to everyone */
 			broadcastUserStatus(id, username, channel, Constants.USERS_ADD);
@@ -399,7 +400,6 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		User userFrom = userReq.getData();
 		String userIdFrom = userFrom.getId();
-		String userNickFrom = userFrom.getUsername();
 		User userTo = userFrom.getMsg().getReceiver();
 		String userIdTo = userTo.getId();
 		String msgBody = userFrom.getMsg().getBody();
@@ -412,10 +412,6 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			channelsSender.writeAndFlush(new TextWebSocketFrame(gson.toJson(forwardResp)), ChannelMatchers.isNot(channel));
 		}
 		
-		/** Check the consistency of connections in DB */
-		//TODO Try cases
-		checkConsistencyConnectionsInDB(channel, remoteHost, userIdFrom, userNickFrom);
-		
 		long currentTimestamp = System.currentTimeMillis() / 1000L;
 		msgCounter = data.getMsgCounter();
 		data.setMsgCounter(msgCounter + 1);
@@ -426,7 +422,6 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		String message = "(" + currentTimestamp + ") " + "[" + userIdFrom + "," + userIdTo + "] " + "{" + msgBody + "}";
 		LogMessage.logMsg(message);
 		
-		//TODO Try deliver message
 		String receiverIp = usersMap_IdIp.get(userIdTo);
 		ChannelGroup channelsReceiver = channelsMap_IpChannelGroup.get(receiverIp);
 		
@@ -435,6 +430,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			logger.error("Message not delivered. ChannelGroup for IP " + receiverIp + " is empty");
 			SingleUserResponse userResp = new SingleUserResponse();
 			userResp.setResponse(Constants.FAIL_DELIVERING);
+			userResp.setData(userFrom);
 			channelsSender.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)));
 			return;
 		}
@@ -454,7 +450,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			/** If all user's connections are closed then send an update message to delete user from the list */
 			if(channelsMap_IpChannelGroup.get(remoteHost).size() == 0) {
 				
-				LogConnection.logConnection("[DISCONNECTION]\t(" + id + ", " + username + ") disconnected. #Channels: 0");
+				LogConnection.logConnection("[DISCONNECTION]\t(" + remoteHost + ", " + id + ", " + username + ") disconnected. #Channels: 0");
 				
 				/** Update the users' list deleting the disconnected user */
 				broadcastUserStatus(id, username, channel, Constants.USERS_REM);
@@ -472,44 +468,6 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		/** Broadcast new user to everyone (excepting the new user who will processed later) */
 		broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)), ChannelMatchers.isNot(channel));
-	}
-	
-	private void checkConsistencyConnectionsInDB(Channel channel, String remoteHost, String userIdFrom, String userNickFrom) {		
-		/** IP is changed and not in DB */
-		if(!usersMap_IpId.containsKey(remoteHost)) {
-			logger.warn("IP for user " + userIdFrom + " is changed. Updating...");
-			
-			usersMap_IpId.put(remoteHost, userIdFrom);
-			usersMap_IdIp.put(userIdFrom, remoteHost);
-			ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-			channelGroup.add(channel);
-			channelsMap_IpChannelGroup.put(remoteHost, channelGroup);
-			
-			LogUsersList.logUsersList(remoteHost + Constants.CVS_DELIMITER + userIdFrom + Constants.CVS_DELIMITER + userNickFrom + Constants.CVS_DELIMITER + "*");
-			LogConnection.logConnection("[REALLOCATION]\t(" + userIdFrom + ", " + userNickFrom + ") connected. #Channels: 1");
-		}
-		
-		else
-		
-		/** The received ID is not equal to the corresponding one registered with that IP */
-		if(!userIdFrom.equals(usersMap_IpId.get(remoteHost))) {
-			logger.warn("IP related to ID " + userIdFrom +  " is changed. Updating...");
-			
-			String oldReferenceId = usersMap_IpId.get(remoteHost);
-			String oldReferenceIp = usersMap_IdIp.get(userIdFrom);
-			usersMap_IdIp.remove(oldReferenceId);
-			usersMap_IpId.remove(oldReferenceIp);
-			channelsMap_IpChannelGroup.remove(oldReferenceIp);
-			
-			usersMap_IdIp.put(userIdFrom, remoteHost);
-			usersMap_IpId.put(remoteHost, userIdFrom);
-			ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-			channelGroup.add(channel);
-			channelsMap_IpChannelGroup.put(remoteHost, channelGroup);
-			
-			LogUsersList.logUsersList(remoteHost + Constants.CVS_DELIMITER + userIdFrom + Constants.CVS_DELIMITER + userNickFrom + Constants.CVS_DELIMITER + "*");
-			LogConnection.logConnection("[REALLOCATION]\t(" + userIdFrom + ", " + userNickFrom + ") connected. #Channels: 1");
-		}
 	}
 	
 	private String getRemoteHost(Channel channel) {

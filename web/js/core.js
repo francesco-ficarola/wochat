@@ -140,7 +140,7 @@ function onSocketOpen(e) {
 
 function onSocketClose(e) {
 	console.log('Web Socket closed.');
-	var system_msg = 'Server went down. Thank you!';
+	var system_msg = 'Chat went down. Thank you!';
 	var table_loading = '\
 				<div id="div-system-msg-container">\
 					<table style="margin-left:auto; margin-right:auto; text-align:center;">\
@@ -259,13 +259,32 @@ function onMessageReceived(e) {
 			else
 			
 			if(jsonMsg.response === FAIL_DELIVERING) {
-				//TODO
+				var jsonUser = jsonMsg.data;
+				var id_from = jsonUser.id;
+				var msg_json = jsonUser.msg;
+				var receiver_id = msg_json.receiver.id;
+				
+				if(id === id_from) {
+					// if I'm chatting with a disconnected user...
+					if(recipient_id === receiver_id && $('#div-' + receiver_id).exists()) {
+						var msg_body = 'User seems to be disconnected...';
+						var $recipient_div = $('#div-' + receiver_id);
+						var msg_struct = '\
+								<div class="div-chat-user-msg">\
+									<div class="div-chat-username" style="background-color:red;">system message</div>\
+									<div class="div-chat-message">' + msg_body + '</div>\
+								</div>';
+						$recipient_div.append(msg_struct);
+						$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
+					}
+				} else {
+					console.error('My ID (' + id + ') is not equal to id_from (' + id_from + ')!');
+				}
 			}
 			
 			else
 			
 			if(jsonMsg.response === FORWARD_TO_OTHER_CHANNELS) {
-				//TODO Message just sent must appear on all opened browsers
 				var jsonUser = jsonMsg.data;
 				var id_from = jsonUser.id;
 				var username_from = jsonUser.username;
@@ -308,7 +327,7 @@ function onMessageReceived(e) {
 
 function sendMessage(message) {
 	if(message == '') {
-		chatLog('Please enter a message.', 'p-info');  
+		console.warn('Message is empty!');  
 		return;
 	}
 	
@@ -316,7 +335,7 @@ function sendMessage(message) {
 		try {
 			socket.send(message);
 		} catch(exception){  
-			chatLog('Error: ' + exception, 'p-warning');  
+			console.error('Error: ' + exception);  
 		}
 	} else {
 		chatLog('The socket is not open.', 'p-warning');
