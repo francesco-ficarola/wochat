@@ -80,7 +80,7 @@ $(document).ready(function() {
 				// Hide all previous chat box
 				$('.div-chat-text').css('display', 'none');
 				
-				checkRecipientDiv(recipient_id, true);
+				checkRecipientDiv(recipient_id, 'block');
 				$recipient_div = $('#div-' + recipient_id);
 				$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 				
@@ -229,7 +229,7 @@ function onMessageReceived(e) {
 					
 					// I'm chatting with someone else...
 					else {
-						checkRecipientDiv(id_from, false);
+						checkRecipientDiv(id_from, 'none');
 					
 						// Adding the number of messages received from a user next to the sender's username
 						if($('#counter-' + id_from).exists()) {
@@ -252,7 +252,7 @@ function onMessageReceived(e) {
 					$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 					
 				} else {
-					console.error('Something went wrong. ID (' + id + ') and received ID (' + my_received_id + ') are not equal!');
+					console.error('Something went wrong... ID (' + id + ') and received ID (' + my_received_id + ') are not equal!');
 				}
 			}
 			
@@ -266,6 +266,32 @@ function onMessageReceived(e) {
 			
 			if(jsonMsg.response === FORWARD_TO_OTHER_CHANNELS) {
 				//TODO Message just sent must appear on all opened browsers
+				var jsonUser = jsonMsg.data;
+				var id_from = jsonUser.id;
+				var username_from = jsonUser.username;
+				var msg_json = jsonUser.msg;
+				var receiver_id = msg_json.receiver.id;
+				
+				if(id === id_from) {
+					// If I still don't have active chats or if I'm already chatting with user I sent this message
+					if(recipient_id === undefined || recipient_id === receiver_id) {
+						$('#' + receiver_id).trigger('click');
+					} else {
+						checkRecipientDiv(receiver_id, 'none');
+					}
+				
+					var msg_body = msg_json.body;
+					var $recipient_div = $('#div-' + receiver_id);
+					var msg_struct = '\
+							<div class="div-chat-user-msg">\
+								<div class="div-chat-username" style="background-color:#336699;">' + username_from + '</div>\
+								<div class="div-chat-message">' + msg_body + '</div>\
+							</div>';
+					$recipient_div.append(msg_struct);
+					$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
+				} else {
+					console.error('This message is not mine! My ID: ' + id + ', id_from: ' + id_from + '!');
+				}
 			}
 		}
 		
@@ -363,11 +389,7 @@ function checkRecipientDiv(receiver_id, display) {
 		$recipient_div = $('#div-' + receiver_id);
 	}
 	
-	if(display === true) {
-		$recipient_div.css('display', 'block');
-	} else {
-		$recipient_div.css('display', 'none');
-	}
+	if(display) $recipient_div.css('display', display);
 }
 
 
