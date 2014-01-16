@@ -1,6 +1,9 @@
 package it.uniroma1.dis.wsngroup.wochat.core;
 
+import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -368,6 +371,13 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		else {
 			logger.debug("New IP address");
 			id = String.valueOf(usersMap_IpId.size() + Constants.MIN_USERS_ID_RANGE);
+			
+			/** Check if that id already exists (disconnection and reconnection decrease and increase the map size) */
+			while(usersMap_IdIp.containsKey(id)) {
+				Integer idNum = Integer.parseInt(id);
+				idNum++;
+				id = String.valueOf(idNum);
+			}
 			usersMap_IpId.put(remoteHost, id);
 			usersMap_IdIp.put(id, remoteHost);
 			usersMap_IdUsername.put(id, username);
@@ -402,6 +412,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		String userIdFrom = userFrom.getId();
 		User userTo = userFrom.getMsg().getReceiver();
 		String userIdTo = userTo.getId();
+		String userNickTo = userTo.getUsername();
 		String msgBody = userFrom.getMsg().getBody();
 		
 		/** Req message must be forwarded to other opened channels of sender */
@@ -425,7 +436,49 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		String receiverIp = usersMap_IdIp.get(userIdTo);
 		ChannelGroup channelsReceiver = channelsMap_IpChannelGroup.get(receiverIp);
 		
-		/** Receiver is disconnected while forwarding a message to him */
+		
+		/** Receiver is disconnected */
+		try {
+			InetAddress inetReceiverIp = InetAddress.getByName(receiverIp);
+			if(!inetReceiverIp.isReachable(5000)) {
+				logger.warn("Receiver is disconnected... Deleting from maps.");
+				usersMap_IpId.remove(receiverIp);
+				usersMap_IdIp.remove(userIdTo);
+				channelsMap_IpChannelGroup.remove(receiverIp);
+				usersMap_IdUsername.remove(userIdTo);
+				usernamesSet.remove(userNickTo);
+				
+				LogConnection.logConnection("[DISCONNECTION]\t(" + receiverIp + ", " + userIdTo + ", " + userNickTo + ") disconnected. #Channels: 0");
+				
+				SingleUserResponse userResp = new SingleUserResponse();
+				userResp.setResponse(Constants.FAIL_DELIVERING);
+				userResp.setData(userFrom);
+				channelsSender.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)));
+				
+				/** Broadcast deleting user... */
+				MultiUsersResponse userDel = new MultiUsersResponse();
+				List<User> userList = new LinkedList<User>();
+				userList.add(new User().setId(userIdTo).setUsername(userNickTo));
+				userDel.setResponse(Constants.USERS_REM);
+				userDel.setData(userList);
+				broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(gson.toJson(userDel)));
+				
+				return;
+				
+			} else {
+				logger.debug("Client " + receiverIp + " is still alive.");
+			}
+		} catch (UnknownHostException e) {
+			logger.error(e.getMessage(), e);
+			return;
+			
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+			return;
+		}
+		
+		
+		/** Receiver close the chat's window while forwarding a message to him */
 		if(channelsReceiver.size() == 0) {
 			logger.error("Message not delivered. ChannelGroup for IP " + receiverIp + " is empty");
 			SingleUserResponse userResp = new SingleUserResponse();
@@ -435,6 +488,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			return;
 		}
 		
+		/** Delivering... */
 		SingleUserResponse userResp = new SingleUserResponse();
 		userResp.setResponse(Constants.DELIVER_MSG);
 		userResp.setData(userFrom);

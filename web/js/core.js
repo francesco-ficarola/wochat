@@ -90,7 +90,7 @@ $(document).ready(function() {
 		
 		$('#form-send-message').submit(function(event) {
 			event.preventDefault();
-			if(recipient_id != undefined) {
+			if(recipient_id != undefined || recipient_id != null) {
 				var $textarea = $('#ta-message');
 				var msg_body = $textarea.val().trim();
 				if(msg_body != '') {
@@ -125,6 +125,7 @@ function connectToServer() {
 		socket.onmessage = onMessageReceived;
 		socket.onopen = onSocketOpen;
 		socket.onclose = onSocketClose;
+		//TODO onerror
 	} catch(exception) {
 		chatLog('Error: ' + exception, 'p-warning');
 	}
@@ -203,6 +204,29 @@ function onMessageReceived(e) {
 				var usersList = jsonMsg.data;
 				for(var i=0; i<usersList.length; i++) {
 					$('#' + usersList[i].id).remove();
+					if($('#div-' + usersList[i].id).exists()) {
+						var receiver_id =  usersList[i].id;
+						var msg_body = 'User seems to be disconnected. Closing...';
+						var $recipient_div = $('#div-' + receiver_id);
+						var msg_struct = '\
+								<div class="div-chat-user-msg">\
+									<div class="div-chat-username" style="background-color:red;">system message</div>\
+									<div class="div-chat-message">' + msg_body + '</div>\
+								</div>';
+						$recipient_div.append(msg_struct);
+						$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
+						$recipient_div.fadeOut(5000, function() {
+							$(this).remove();
+						});
+						
+						if(recipient_id !== undefined) {
+							if(recipient_id === receiver_id) {
+								recipient_id = null;
+								var chat_title = 'Click on a user in the users\' list and start chatting!';
+								$('#span-chat-title').hide().html(chat_title).fadeIn('slow');
+							}
+						}
+					}
 				}
 			}
 			
@@ -223,7 +247,7 @@ function onMessageReceived(e) {
 					$recipient_p.css('background-color', p_users_list_NEW_MESSAGE_BACKGROUND);
 					
 					// If I still don't have active chats or if I'm already chatting with user sending this message
-					if(recipient_id === undefined || recipient_id === id_from) {
+					if(recipient_id === undefined || recipient_id === null || recipient_id === id_from) {
 						$('#' + id_from).trigger('click');
 					}
 					
@@ -267,7 +291,7 @@ function onMessageReceived(e) {
 				if(id === id_from) {
 					// if I'm chatting with a disconnected user...
 					if(recipient_id === receiver_id && $('#div-' + receiver_id).exists()) {
-						var msg_body = 'User seems to be disconnected...';
+						var msg_body = 'Message delivering was failed.';
 						var $recipient_div = $('#div-' + receiver_id);
 						var msg_struct = '\
 								<div class="div-chat-user-msg">\
@@ -293,7 +317,7 @@ function onMessageReceived(e) {
 				
 				if(id === id_from) {
 					// If I still don't have active chats or if I'm already chatting with user I sent this message
-					if(recipient_id === undefined || recipient_id === receiver_id) {
+					if(recipient_id === undefined || recipient_id === null || recipient_id === receiver_id) {
 						$('#' + receiver_id).trigger('click');
 					} else {
 						checkRecipientDiv(receiver_id, 'none');
