@@ -35,10 +35,14 @@
 			<div id="div-chat-box"></div>
 		</div>
 		<div id="div-sending">
-			<form name="form-send-message" id="form-send-message">
-				<textarea id='ta-message' name='ta-message'></textarea>
-				<input type="submit" name="submit-message" id="submit-message" value="Send" onfocus="this.blur();" />
-			</form>
+			<div id="div-form-wrapper">
+				<form name="form-send-message" id="form-send-message">
+					<div id="div-textarea">
+						<textarea id='ta-message' name='ta-message'></textarea>
+					</div>
+					<div id="div-submit"><p>Send</p></div>
+				</form>
+			</div>
 		</div>
 	</div>
 	<footer>Copyright</footer>

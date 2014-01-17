@@ -8,6 +8,7 @@ body {
 	font-family: arial, helvetica, sans-serif;
 	font-size: 10pt;
 	color: #333333;
+	background-color: #f8f8f8;
 }
 
 #div-chat-box {
@@ -32,13 +33,23 @@ body {
 
 #div-chatroom {
 	position: relative;
-	height: calc(100% - 70px); /* IE9+ and future browsers */
-	height: -moz-calc(100% - 70px); /* Firefox */
-	height: -webkit-calc(100% - 70px); /* Chrome, Safari */
+	height: calc(100% - 72px); /* IE9+ and future browsers */
+	height: -moz-calc(100% - 72px); /* Firefox */
+	height: -webkit-calc(100% - 72px); /* Chrome, Safari */
 	padding: 0;
 	text-align: center;
 	margin: 0;
-	border-right: 2px solid #333;
+	overflow: auto;
+}
+
+#div-form-wrapper {
+	position: relative;
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	min-width: 500px;
+	width: auto !important;
+	height: 100%;
 	overflow: auto;
 }
 
@@ -60,7 +71,6 @@ body {
 	height: calc(100% - 70px); /* IE9+ and future browsers */
 	height: -moz-calc(100% - 70px); /* Firefox */
 	height: -webkit-calc(100% - 70px); /* Chrome, Safari */
-	background-color: #f5f5f5;
 	overflow: auto;
 }
 
@@ -69,7 +79,7 @@ body {
 	margin: 0;
 	padding: 0;	
 	height: 70px;
-	background-color: red;
+	overflow: auto;
 }
 
 #div-system-msg {
@@ -96,6 +106,37 @@ body {
 	margin-right: auto;
 }
 
+#div-submit {
+	position: relative;
+	width: 70px;
+	height: 50px;
+	top: 5px;
+	left: 20px;
+	color: #66ff99;
+	background-color: #333;
+	overflow: auto;
+}
+
+#div-submit p {
+	margin: 0;
+	padding: 0;
+	font-weight: bold;
+	line-height: 50px;
+}
+
+#div-textarea {
+	position: relative;
+	width: 80%;
+	height: 100%;
+	top: 0;
+	left: 10px;
+	margin: 0;
+	padding: 0;
+	border: 1px solid #333;
+	float: left;
+	overflow: auto;
+}
+
 #div-user-status {
 	position: relative;
 	width: 300px;
@@ -110,13 +151,14 @@ body {
 
 #div-users-list {
 	position: relative;
-	width: 250px;
-	height: calc(100% - 70px); /* IE9+ and future browsers */
-	height: -moz-calc(100% - 70px); /* Firefox */
-	height: -webkit-calc(100% - 70px); /* Chrome, Safari */
+	width: 300px;
+	height: calc(100% - 72px); /* IE9+ and future browsers */
+	height: -moz-calc(100% - 72px); /* Firefox */
+	height: -webkit-calc(100% - 72px); /* Chrome, Safari */
 	padding: 0;
 	margin: 0;
-	background-color: #f5f5f5;
+	background-color: #fff;
+	border-left: 1px solid #888;
 	overflow: auto;
 	float: right;
 }
@@ -152,6 +194,20 @@ body {
 	vertical-align: middle;
 }
 
+#ta-message {
+	position: relative;
+	display: block; /* Fix bottom margin in Chrome and Firefox: http://stackoverflow.com/questions/3453959/how-do-i-fix-inconsistent-textarea-bottom-margin-in-firefox-and-chrome */
+	height: 60px;
+	margin: 0;
+	border: 0;
+	padding: 5px;
+	width: 100%;
+	-webkit-box-sizing: border-box; /* http://stackoverflow.com/questions/271067/how-can-i-make-a-textarea-100-width-without-overflowing-when-padding-is-present */
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+	resize:none;
+}
+
 #user-input-box {
 	width: 150px;
 }
@@ -165,6 +221,7 @@ header {
 	text-align: left;
 	padding: 0;
 	margin: 0;
+	border-bottom: 1px solid #888;
 }
 
 footer {
@@ -172,7 +229,7 @@ footer {
 	text-align: left;
 	padding: 0;
 	margin: 0;
-	background-color: #6699ff;
+	border-top: 1px solid #888;
 }
 
 .div-chat-text {

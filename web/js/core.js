@@ -55,6 +55,25 @@ $(document).ready(function() {
 			$(this).css('background', '#ffffff');
 		});
 		
+		$('#ta-message').keydown(function(e) {
+			if (e.keyCode === 13 && !e.shiftKey) {
+				$('#form-send-message').submit();
+				e.preventDefault();
+			}
+		});
+		
+		$('#ta-message').focus(function(){
+			$(this).css('background-color', '#eaffee');
+		});
+		
+		$('#ta-message').blur(function(){
+			$(this).css('background-color', '#fff');
+		});
+		
+		$('#div-submit').click(function(){
+			$('#form-send-message').submit();
+		});
+		
 		$(document).on('mousewheel', '.div-chat-text', function (e, delta){
 			this.scrollTop += (delta < 0 ? 1 : -1) * 30;
 			e.preventDefault();
