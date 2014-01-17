@@ -160,16 +160,10 @@ function onSocketOpen(e) {
 
 function onSocketClose(e) {
 	console.log('Web Socket closed.');
-	var system_msg = 'Chat went down. Thank you!';
+	var system_msg = 'Chat went down or you disconnected. Thank you!';
 	var table_loading = '\
 				<div id="div-system-msg-container">\
-					<table style="margin-left:auto; margin-right:auto; text-align:center;">\
-						<tr>\
-							<td>\
-								<p>' + system_msg + '</p>\
-							</td>\
-						</tr>\
-					</table>\
+					<p>' + system_msg + '</p>\
 				</div>';
 
 	$('#div-system-msg').html(table_loading);
