@@ -1,5 +1,8 @@
 package it.uniroma1.dis.wsngroup.wochat.core;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -10,6 +13,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.imageio.ImageIO;
 
 import org.apache.log4j.Logger;
 
@@ -133,6 +138,31 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			if(req.getUri().matches(".*\\.js$")) {
 				res.headers().set(CONTENT_TYPE, "text/javascript; charset=UTF-8");
 			}
+			
+			setContentLength(res, content.readableBytes());
+
+			sendHttpResponse(ctx, req, res);
+			return;
+		}
+		
+		if(req.getUri().matches(".*\\.(png|jpg)$")) {
+			/** Image loading... */
+			BufferedImage originalImage = ImageIO.read(new File("./web/" + req.getUri()));
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ImageIO.write( originalImage, "jpg", baos );
+			baos.flush();
+			byte[] imageInByte = baos.toByteArray();
+			baos.close();
+			
+			ByteBuf content = Unpooled.copiedBuffer(imageInByte);
+			FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
+			
+			if(req.getUri().matches(".*\\.png$")) {
+				res.headers().set(CONTENT_TYPE, "image/png");
+			} else
+			if(req.getUri().matches(".*\\.jpg$")) {
+				res.headers().set(CONTENT_TYPE, "image/jpeg");
+			} 
 			
 			setContentLength(res, content.readableBytes());
 

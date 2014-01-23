@@ -57,9 +57,9 @@ body {
 	position: relative;
 	height: 50px;
 	padding: 0;
-	text-align: center;
+	text-align: left;
 	margin: 0;
-	background-color: #6699ff;
+	background-color: #fff;
 	overflow: auto;
 }
 
@@ -152,7 +152,7 @@ body {
 	vertical-align: middle;
 	padding: 0;
 	margin: 0;
-	background-color: #ffff99;
+	background-color: #fff;
 	float: right;
 }
 
@@ -184,6 +184,13 @@ body {
 	background-color: #fff;
 	z-index: 1;
 	overflow: auto;
+}
+
+#img-logo {
+	display: block;
+	height: 49px;
+	margin: 0px 0px 0px 30px;
+	padding: 0;
 }
 
 #p-chat-title {
