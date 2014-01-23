@@ -38,8 +38,8 @@ $(document).ready(function() {
 		// Function exists
 		$.fn.exists = function() { return this.length>0; }
 		
-		// Disable input, textarea and sending button in the chatroom div before logging:
-		$("#div-chatroom").find('input,textarea,button').prop('disabled', true);
+		// Disable textarea in the chatroom div before logging:
+		$('#ta-message').prop('disabled', true);
 	
 		// Web Socket connection
 		var url_domain = document.domain;
@@ -62,19 +62,34 @@ $(document).ready(function() {
 			}
 		});
 		
-		$('#ta-message').focus(function(){
+		$('#ta-message').focus(function() {
 			$(this).css('background-color', '#eaffee');
 		});
 		
-		$('#ta-message').blur(function(){
+		$('#ta-message').blur(function() {
 			$(this).css('background-color', '#fff');
 		});
 		
-		$('#div-submit').click(function(){
-			$('#form-send-message').submit();
+		$('#div-submit').click(function() {
+			if(username !== undefined) {
+				$(this).hide().fadeIn(250);
+				$('#form-send-message').submit();
+			}
 		});
 		
-		$(document).on('mousewheel', '.div-chat-text', function (e, delta){
+		$('#div-submit').mouseenter(function() {
+			if(username !== undefined) {
+				$(this).css('background-color', '#555');
+			}
+		});
+		
+		$('#div-submit').mouseleave(function() {
+			if(username !== undefined) {
+				$(this).css('background-color', '#333');
+			}
+		});
+		
+		$(document).on('mousewheel', '.div-chat-text', function (e, delta) {
 			this.scrollTop += (delta < 0 ? 1 : -1) * 30;
 			e.preventDefault();
 		});
@@ -93,7 +108,7 @@ $(document).ready(function() {
 				$(this).html(recipient_username);
 				console.log('Recipient: ' + recipient_id + ', ' + recipient_username);
 				
-				var chat_title = 'Chatting with ' + recipient_username + '...';
+				var chat_title = 'Chatting with <span style="color:#ca41f7">' + recipient_username + '</span> . . .';
 				$('#span-chat-title').hide().html(chat_title).fadeIn('slow');
 				
 				// Hide all previous chat box
@@ -282,7 +297,7 @@ function onMessageReceived(e) {
 					var $recipient_div = $('#div-' + id_from);
 					var msg_struct = '\
 							<div class="div-chat-user-msg">\
-								<div class="div-chat-username" style="background-color:#009966;">' + username_from + '</div>\
+								<div class="div-chat-username" style="background-color:#ca41f7;">' + username_from + '</div>\
 								<div class="div-chat-message">' + msg_body + '</div>\
 							</div>';
 					$recipient_div.append(msg_struct);
@@ -340,7 +355,7 @@ function onMessageReceived(e) {
 					var $recipient_div = $('#div-' + receiver_id);
 					var msg_struct = '\
 							<div class="div-chat-user-msg">\
-								<div class="div-chat-username" style="background-color:#336699;">' + username_from + '</div>\
+								<div class="div-chat-username" style="background-color:#27ade2;">' + username_from + '</div>\
 								<div class="div-chat-message">' + msg_body + '</div>\
 							</div>';
 					$recipient_div.append(msg_struct);
@@ -417,10 +432,13 @@ function registrationFormListener(event) {
 
 
 function loggedin(json_username) {
-	$("#div-chatroom").find('input,textarea,button').prop('disabled', false);
+	$('#ta-message').prop('disabled', false);
+	$('#div-submit').css('cursor', 'pointer');
+	$('#div-submit').css('background-color', '#333');
+	
 	username = json_username;
 	console.log('My username is: ' + username);
-	var user_status_message = 'You are <span style="color:red;">' + username + '</span>';
+	var user_status_message = 'You are <span style="color:#27ade2;">' + username + '</span>';
 	$('#p-send-username').html(user_status_message);
 	
 	// Sending message to join the chat

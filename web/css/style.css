@@ -40,6 +40,8 @@ body {
 	text-align: center;
 	margin: 0;
 	overflow: auto;
+	background: url(../img/wochat_woman_transparency.png) no-repeat left center fixed;
+	background-size: contain;
 }
 
 #div-form-wrapper {
@@ -55,12 +57,14 @@ body {
 
 #div-logo {
 	position: relative;
+	min-width: 200px;
 	height: 50px;
 	padding: 0;
 	text-align: left;
 	margin: 0;
 	background-color: #fff;
-	overflow: auto;
+	overflow-x: auto;
+	overflow-y: hidden;
 }
 
 #div-messages {
@@ -120,7 +124,8 @@ body {
 	top: 5px;
 	left: 20px;
 	color: #66ff99;
-	background-color: #333;
+	cursor: default;
+	background-color: #999;
 	overflow: auto;
 }
 
@@ -187,9 +192,12 @@ body {
 }
 
 #img-logo {
+	top: -15px;
+	left: 30px;
 	display: block;
-	height: 49px;
-	margin: 0px 0px 0px 30px;
+	position: relative;
+	height: 70px;
+	margin: 0;
 	padding: 0;
 }
 
@@ -271,7 +279,7 @@ footer {
 	font-weight: bold;
 	padding: 7px;
 	color: #fff;
-	background-color: #336699;
+	background-color: #27ade2;
 	overflow: auto;
 	float: left;
 }

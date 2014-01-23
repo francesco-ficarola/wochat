@@ -149,7 +149,12 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			/** Image loading... */
 			BufferedImage originalImage = ImageIO.read(new File("./web/" + req.getUri()));
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			ImageIO.write( originalImage, "jpg", baos );
+			if(req.getUri().matches(".*\\.png$")) {
+				ImageIO.write( originalImage, "png", baos );
+			} else
+			if(req.getUri().matches(".*\\.jpg$")) {
+				ImageIO.write( originalImage, "jpg", baos );
+			}
 			baos.flush();
 			byte[] imageInByte = baos.toByteArray();
 			baos.close();
@@ -414,6 +419,13 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			
 			LogUsersList.logUsersList(remoteHost + Constants.CVS_DELIMITER + id + Constants.CVS_DELIMITER + username);
 			LogConnection.logConnection("[NEW CONNECTION]\t(" + remoteHost + ", " + id + ", " + username + ") connected. #Channels: 1");
+			
+			long currentTimestamp = System.currentTimeMillis() / 1000L;
+			msgCounter = data.getMsgCounter();
+			data.setMsgCounter(msgCounter + 1);
+			String seqHex = "0x" + String.format("%08x", msgCounter & 0xFFFFFFFF);
+			String sighting = "S t=" + currentTimestamp + " ip=0x00000000" + " id=" + id + " boot_count=0" + " seq=" + seqHex + " strgth=3 flgs=0 last_seen=0";
+			LogInteraction.logInteraction(sighting);
 			
 			/** Broadcast new user to everyone */
 			broadcastUserStatus(id, username, channel, Constants.USERS_ADD);

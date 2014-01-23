@@ -1,13 +1,21 @@
 WoChat
 ======
 
-A *WebSocket*-based chat for **Wisdom of Crowds** experiments. Server has been developed in Java using Netty, while client has been written in Javascript using JQuery.
+A *WebSocket*-based chat for **Wisdom of Crowds** experiments. The server-side has been developed in Java using Netty, while the client-side has been written in Javascript using JQuery.
+
+Download
+--------
+
+You can easily clone the full project by executing:
+
+    $ git clone https://github.com/francesco-ficarola/wochat.git
 
 Building and Running
 --------------------
 
-After cloning the whole git project you can build and run the software by executing:
+After cloning the git repository you can build and run the software by executing:
 
+    $ cd wochat/
     $ ./build.sh
     $ ./run.sh
 
@@ -23,3 +31,14 @@ The *run.sh* script is there for your convenience. Otherwise, after building, yo
 If the server properly starts, then open your browser (*Chrome or Firefox are recommended*) and go to:
 
     http://127.0.0.1:8080/
+
+Log-files
+---------
+
+All log-files are saved in the "logs" folder (from the repository root: target/WoChat/logs).
+
+* *connections.log*: information about users' connections
+* *interactions.log*: users' interactions (format parsable by [OpenBeaconParser](https://github.com/francesco-ficarola/OpenBeaconParser))
+* *messages.log*: users' messages in CSV format
+* *userslist.log*: list of all participants
+* *wochat.log*: system log
