@@ -181,6 +181,38 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			return;
 		}
 		
+		/** Admin connection */
+		if("/admin".equals(req.getUri())) {
+			ByteBuf receivedContent = req.content();
+			
+			if(receivedContent.isReadable()) {
+				String receivedMsg = receivedContent.toString(CharsetUtil.UTF_8);
+				logger.debug("Request Content: " + receivedMsg);
+				String splitter[] = receivedMsg.split("=");
+				
+				if(splitter.length > 1) {
+					String admin = splitter[1];
+					SingleUserResponse responseJson = new SingleUserResponse();
+					
+					if(admin.equals(Constants.ADMIN_USERNAME)) {
+						responseJson.setResponse(Constants.HTTP_ADMIN_SUCCESS_CONN);
+						responseJson.setData(new User().setUsername(admin));
+					} else {
+						responseJson.setResponse(Constants.HTTP_ADMIN_FAIL_CONN);
+					}
+					
+					ByteBuf sendingContent = Unpooled.copiedBuffer(gson.toJson(responseJson), CharsetUtil.UTF_8);
+					FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, sendingContent);
+					
+					res.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8");
+					setContentLength(res, sendingContent.readableBytes());
+		
+					sendHttpResponse(ctx, req, res);
+					return;
+				}
+			}
+		}
+		
 		/** New user's connection */
 		if("/newuser".equals(req.getUri())) {
 			
@@ -189,7 +221,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			if(usersMap_IpId.containsKey(remoteHost)) {
 				logger.info("User already logged in. Just reload its page...");
 				SingleUserResponse responseJson = new SingleUserResponse();
-				responseJson.setResponse(Constants.ALREADY_CONN);
+				responseJson.setResponse(Constants.HTTP_ALREADY_CONN);
 				
 				ByteBuf sendingContent = Unpooled.copiedBuffer(gson.toJson(responseJson), CharsetUtil.UTF_8);
 				FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, sendingContent);
@@ -208,16 +240,16 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 				logger.debug("Request Content: " + receivedMsg);
 				String splitter[] = receivedMsg.split("=");
 				
-				if(splitter.length > 1) {	
+				if(splitter.length > 1) {
 					String username = splitter[1];
 					SingleUserResponse responseJson = new SingleUserResponse();
 					
 					if(!usernamesSet.contains(username)) {
-						responseJson.setResponse(Constants.SUCCESS_CONN);
+						responseJson.setResponse(Constants.HTTP_SUCCESS_CONN);
 						responseJson.setData(new User().setUsername(username));
 						usernamesSet.add(username);
 					} else {
-						responseJson.setResponse(Constants.FAIL_CONN);
+						responseJson.setResponse(Constants.HTTP_FAIL_CONN);
 					}
 					
 					ByteBuf sendingContent = Unpooled.copiedBuffer(gson.toJson(responseJson), CharsetUtil.UTF_8);
@@ -313,7 +345,6 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 	}
 	
 	private void manageMessages(Channel channel, String jsonReq) {
-		logger.debug("Request:" + jsonReq);
 		SingleUserRequest userReq = gson.fromJson(jsonReq, SingleUserRequest.class);
 		
 		/** Message request on the connection status */
@@ -328,8 +359,23 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			User user = userReq.getData();
 			logger.debug("Request to join the chat from: " + user.getUsername());
 			
+			/** Manage admin */
+			if(user.getUsername().equals(Constants.ADMIN_USERNAME)) {
+				manageAdmin(channel);
+			}
+			
 			/** Manage users */
-			manageUsers(channel, user.getUsername());
+			else {
+				manageUsers(channel, user.getUsername());
+			}
+		}
+		
+		else
+		
+		/** Messages from the admin */
+		if(userReq.getRequest().equals(Constants.ADMIN_DELIVER_MSG)) {
+			String msgBody = userReq.getData().getMsg().getBody();
+			adminMsg(msgBody);
 		}
 		
 		else
@@ -339,7 +385,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			deliverMsg(userReq, channel);
 		}
 	}
-	
+
 	private void manageConnectionStatus(Channel channel) {
 		String remoteHost = getRemoteHost(channel);
 		SingleUserResponse userResp = new SingleUserResponse();
@@ -364,6 +410,22 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		}
 		
 		channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)));
+	}
+	
+	private void manageAdmin(Channel channel) {
+		logger.debug("Admin successfully connected");
+		
+		/** Add the channel to the ChannelGroup; it will not add duplicate, like a set */
+		broadcastChannelGroup.add(channel);
+		logger.debug("Number of channels in the broadcast group: " + broadcastChannelGroup.size());
+		
+		/** Send a token to manage the admin in the client-side */
+		SingleUserResponse adminResp = new SingleUserResponse();
+		adminResp.setResponse(Constants.ADMIN_READY);
+		channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(adminResp)));
+		
+		/** Send all connected users to the admin */
+		broadcastUsersList(channel);
 	}
 	
 	private void manageUsers(Channel channel, String username) {
@@ -405,14 +467,13 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		/** New User */
 		else {
 			logger.debug("New IP address");
-			id = String.valueOf(usersMap_IpId.size() + Constants.MIN_USERS_ID_RANGE);
 			
-			/** Check if that id already exists (disconnection and reconnection decrease and increase the map size) */
-			while(usersMap_IdIp.containsKey(id)) {
-				Integer idNum = Integer.parseInt(id);
-				idNum++;
-				id = String.valueOf(idNum);
-			}
+			/** ID assignment... */
+			int userCounter = data.getUserCounter();
+			id = String.valueOf(Constants.MIN_USERS_ID_RANGE + userCounter);
+			userCounter++;
+			data.setUserCounter(userCounter);
+			
 			usersMap_IpId.put(remoteHost, id);
 			usersMap_IdIp.put(id, remoteHost);
 			usersMap_IdUsername.put(id, username);
@@ -431,19 +492,48 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			broadcastUserStatus(id, username, channel, Constants.USERS_ADD);
 		}
 		
-		/** Creating a JSON object including all users connected */
-		MultiUsersResponse connectedUsersResp = new MultiUsersResponse();
-		List<User> connectedUsersList = new LinkedList<User>();
-		Set<Map.Entry<String, String>> usersSet = usersMap_IdUsername.entrySet();
-		for (Map.Entry<String, String> userIt : usersSet) {
-			User user = new User().setId(userIt.getKey()).setUsername(userIt.getValue());
-			connectedUsersList.add(user);
-	    }
-		connectedUsersResp.setResponse(Constants.USERS_ADD);
-		connectedUsersResp.setData(connectedUsersList);
-		
-		/** Send all users list to the connected user (new or already registered) */
-		channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(connectedUsersResp)));
+		broadcastUsersList(channel);
+	}
+	
+	private void adminMsg(String msgBody) {
+		logger.debug("[ADMIN] " + msgBody);
+		String splitter[] = msgBody.split(" ");
+		if(splitter.length > 1) {
+			String command = splitter[0];
+			
+			/** Forcing user disconnection */
+			if(command.equals(Constants.ADMIN_CMD_DISCONNECT)) {
+				String idToDisconnect = splitter[1];
+				if(usersMap_IdUsername.containsKey(idToDisconnect) && usersMap_IdIp.containsKey(idToDisconnect)) {
+					String userToDisconnect = usersMap_IdUsername.get(idToDisconnect);
+					String ipToDisconnect = usersMap_IdIp.get(idToDisconnect);
+					ChannelGroup channelsToDisconnect = channelsMap_IpChannelGroup.get(ipToDisconnect);
+					usernamesSet.remove(userToDisconnect);
+					usersMap_IdUsername.remove(idToDisconnect);
+					usersMap_IdIp.remove(idToDisconnect);
+					usersMap_IpId.remove(ipToDisconnect);
+					
+					channelsMap_IpChannelGroup.remove(ipToDisconnect);
+					for(Channel channel : channelsToDisconnect) {
+						broadcastChannelGroup.disconnect(ChannelMatchers.is(channel));
+						broadcastChannelGroup.remove(channel);
+					}
+					
+					logger.debug("Number of channels in the broadcast group: " + broadcastChannelGroup.size());
+					
+					/** Broadcast deleting user... */
+					MultiUsersResponse userDel = new MultiUsersResponse();
+					List<User> userList = new LinkedList<User>();
+					userList.add(new User().setId(idToDisconnect).setUsername(userToDisconnect));
+					userDel.setResponse(Constants.USERS_REM);
+					userDel.setData(userList);
+					broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(gson.toJson(userDel)));
+					
+				} else {
+					logger.warn("Non-existing user ID!");
+				}
+			}
+		}
 	}
 	
 	private void deliverMsg(SingleUserRequest userReq, Channel channel) {		
@@ -564,6 +654,22 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		/** Broadcast new user to everyone (excepting the new user who will processed later) */
 		broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)), ChannelMatchers.isNot(channel));
+	}
+	
+	private void broadcastUsersList(Channel channel) {
+		/** Creating a JSON object including all users connected */
+		MultiUsersResponse connectedUsersResp = new MultiUsersResponse();
+		List<User> connectedUsersList = new LinkedList<User>();
+		Set<Map.Entry<String, String>> usersSet = usersMap_IdUsername.entrySet();
+		for (Map.Entry<String, String> userIt : usersSet) {
+			User user = new User().setId(userIt.getKey()).setUsername(userIt.getValue());
+			connectedUsersList.add(user);
+	    }
+		connectedUsersResp.setResponse(Constants.USERS_ADD);
+		connectedUsersResp.setData(connectedUsersList);
+		
+		/** Send all users list to the user who wants to know that list */
+		channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(connectedUsersResp)));
 	}
 	
 	private String getRemoteHost(Channel channel) {

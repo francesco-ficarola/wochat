@@ -10,10 +10,17 @@ public class Constants {
 	public static final String NEW_USER_STATUS = "new_user_status";
 	public static final String REG_USER_STATUS = "reg_user_status";
 	public static final String JOIN_CHAT = "join_chat";
-	public static final String SUCCESS_CONN = "success_conn";
-	public static final String FAIL_CONN = "fail_conn";
-	public static final String ALREADY_CONN = "already_conn";
+	public static final String HTTP_SUCCESS_CONN = "success_conn";
+	public static final String HTTP_FAIL_CONN = "fail_conn";
+	public static final String HTTP_ALREADY_CONN = "already_conn";
 	public static final String DELIVER_MSG = "deliver_msg";
+	public static final String ADMIN_DELIVER_MSG = "admin_deliver_msg";
 	public static final String FAIL_DELIVERING = "fail_delivering";
 	public static final String FORWARD_TO_OTHER_CHANNELS = "forward_to_other_channels";
+	public static final String ADMIN_USERNAME = "connect_adm0X0";
+	public static final String HTTP_ADMIN_SUCCESS_CONN = "admin_success_conn";
+	public static final String HTTP_ADMIN_FAIL_CONN = "admin_fail_conn";
+	public static final String ADMIN_READY = "admin_ready";
+	
+	public static final String ADMIN_CMD_DISCONNECT = "/disconnect";
 }

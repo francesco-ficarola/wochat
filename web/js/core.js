@@ -1,6 +1,6 @@
-const SUCCESS_CONN = 'success_conn';
-const FAIL_CONN = 'fail_conn';
-const ALREADY_CONN = 'already_conn';
+const HTTP_SUCCESS_CONN = 'success_conn';
+const HTTP_FAIL_CONN = 'fail_conn';
+const HTTP_ALREADY_CONN = 'already_conn';
 const USERS_ADD = 'users_add';
 const USERS_REM = 'users_rem';
 const GET_CONN_STATUS = 'get_conn_status';
@@ -8,8 +8,13 @@ const NEW_USER_STATUS = 'new_user_status';
 const REG_USER_STATUS = 'reg_user_status';
 const JOIN_CHAT = 'join_chat';
 const DELIVER_MSG = 'deliver_msg';
+const ADMIN_DELIVER_MSG = 'admin_deliver_msg';
 const FAIL_DELIVERING = 'fail_delivering';
 const FORWARD_TO_OTHER_CHANNELS = 'forward_to_other_channels';
+const HTTP_ADMIN_SUCCESS_CONN = 'admin_success_conn';
+const HTTP_ADMIN_FAIL_CONN = 'admin_fail_conn';
+const ADMIN_READY = 'admin_ready';
+const ADMIN_ID = '0000';
 
 const p_users_list_DEFAULT_BACKGROUND = '#dff6ff';
 const p_users_list_HOVER_BACKGROUND = '#beedff';
@@ -95,7 +100,7 @@ $(document).ready(function() {
 		});
 		
 		$(document).on('click', '.p-users-list', function() {			
-			if(id != $(this).attr('id')) {
+			if(id != $(this).attr('id') && id != ADMIN_ID) {
 				$('.p-users-list').css('background-color', p_users_list_DEFAULT_BACKGROUND);
 				$('.p-users-list').css('color', '#333');
 				$('.p-users-list').css('font-weight', 'normal');
@@ -140,7 +145,13 @@ $(document).ready(function() {
 					$textarea.val('');
 					$textarea.focus();
 					
-					var json_data = '{"request": "' + DELIVER_MSG + '", "data": {"id": "' + id + '", "username": "' + username + '", "msg": {"receiver": {"id": "' + recipient_id + '", "username": "' + recipient_username + '"}, "body": "' + msg_body + '"}}}';
+					var json_data;
+					if(id === ADMIN_ID) {
+						json_data = '{"request": "' + ADMIN_DELIVER_MSG + '", "data": {"id": "' + id + '", "username": "' + username + '", "msg": {"receiver": {"id": "' + recipient_id + '", "username": "' + recipient_username + '"}, "body": "' + msg_body + '"}}}';
+					} else {
+						json_data = '{"request": "' + DELIVER_MSG + '", "data": {"id": "' + id + '", "username": "' + username + '", "msg": {"receiver": {"id": "' + recipient_id + '", "username": "' + recipient_username + '"}, "body": "' + msg_body + '"}}}';
+					}
+					
 					sendMessage(json_data);
 				}
 			} else {
@@ -195,6 +206,8 @@ function onMessageReceived(e) {
 		
 		// Reponse to the previous request
 		if(jsonMsg.response) {
+		
+			// Response received whenever a new user opens the chat
 			if(jsonMsg.response === NEW_USER_STATUS) {
 				var registration_form = '\
 							<form name="form-send-username" id="form-send-username">\
@@ -209,12 +222,14 @@ function onMessageReceived(e) {
 			
 			else
 			
+			// Response received whenever an already-connected user reloads the page or open the chat with another browser
 			if(jsonMsg.response === REG_USER_STATUS) {
 				loggedin(jsonMsg.data.username);
 			}
 			
 			else
 			
+			// Response received whenever a user is logged in
 			if(jsonMsg.response === USERS_ADD) {
 				var usersList = jsonMsg.data;
 				for(var i=0; i<usersList.length; i++) {
@@ -228,6 +243,7 @@ function onMessageReceived(e) {
 			
 			else
 			
+			// Response received whenever a user is disconnected
 			if(jsonMsg.response === USERS_REM) {
 				var usersList = jsonMsg.data;
 				for(var i=0; i<usersList.length; i++) {
@@ -260,6 +276,7 @@ function onMessageReceived(e) {
 			
 			else
 			
+			// Response received whenever a message needs to be delivered
 			if(jsonMsg.response === DELIVER_MSG) {
 				var jsonUser = jsonMsg.data;
 				var id_from = jsonUser.id;
@@ -310,6 +327,7 @@ function onMessageReceived(e) {
 			
 			else
 			
+			// Response received whenever a message is not delivered
 			if(jsonMsg.response === FAIL_DELIVERING) {
 				var jsonUser = jsonMsg.data;
 				var id_from = jsonUser.id;
@@ -336,6 +354,7 @@ function onMessageReceived(e) {
 			
 			else
 			
+			// Response received whenever a message needs to be forwarded to other channels (i.e., other opened browsers)
 			if(jsonMsg.response === FORWARD_TO_OTHER_CHANNELS) {
 				var jsonUser = jsonMsg.data;
 				var id_from = jsonUser.id;
@@ -363,6 +382,22 @@ function onMessageReceived(e) {
 				} else {
 					console.error('This message is not mine! My ID: ' + id + ', id_from: ' + id_from + '!');
 				}
+			}
+			
+			else
+			
+			// Response received whenever the admin is authorized to join chat
+			if(jsonMsg.response === ADMIN_READY) {
+				id = '0000';
+				var chat_title = 'Broadcasting to all users...';
+				$('#span-chat-title').hide().html(chat_title).fadeIn('slow');
+				
+				recipient_id = 'broadcast-users';
+				checkRecipientDiv(recipient_id, 'block');
+				$recipient_div = $('#div-' + recipient_id);
+				$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
+				
+				$('#ta-message').focus();
 			}
 		}
 		
@@ -407,16 +442,24 @@ function registrationFormListener(event) {
 				var jsonMsg = $.parseJSON(data);
 				if(jsonMsg.response) {
 					// success_conn: username can be choose
-					if(jsonMsg.response === SUCCESS_CONN) {
+					if(jsonMsg.response === HTTP_SUCCESS_CONN) {
 						loggedin(jsonMsg.data.username);
 					} else
 					// fail_conn: username already taken
-					if(jsonMsg.response === FAIL_CONN) {
+					if(jsonMsg.response === HTTP_FAIL_CONN) {
 						$('#div-username-warning').text('Your username already exists!').show().fadeOut(5000);
 					} else
 					// already_conn: username already logged in with another browser
-					if(jsonMsg.response === ALREADY_CONN) {
+					if(jsonMsg.response === HTTP_ALREADY_CONN) {
 						location.reload(true);
+					} else
+					// admin_success_conn: admin connection
+					if(jsonMsg.response === HTTP_ADMIN_SUCCESS_CONN) {
+						loggedin(jsonMsg.data.username);
+					} else
+					// admin_fail_conn: invalid admin username
+					if(jsonMsg.response === HTTP_ADMIN_FAIL_CONN) {
+						$('#div-username-warning').text('Admin username is not valid!').show().fadeOut(5000);
 					}
 				} else {
 					console.error('The JSON object does not contain the response property');
