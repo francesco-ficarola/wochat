@@ -292,6 +292,31 @@ footer {
 	overflow: auto;
 }
 
+.div-survey {
+	display: none;
+	position: fixed;
+	background-color: #000000;
+	z-index: 1;
+	width: 100%;
+	height: 100%;
+	overflow: auto;
+	opacity: 0.95;
+	filter:alpha(opacity=90);
+	filter:"alpha(opacity=90)";
+	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(opacity=90)";
+	filter: progid:DXImageTransform.Microsoft.Alpha(opacity=90);
+}
+
+.div-survey-container {
+	color: #fff;
+	font-size: 12pt;
+	font-weight: bold;
+	text-align: center;
+	margin-top: 10%;
+	margin-left: auto;
+	margin-right: auto;
+}
+
 .p-info {
 	color: black;
 	margin-top: 4px;

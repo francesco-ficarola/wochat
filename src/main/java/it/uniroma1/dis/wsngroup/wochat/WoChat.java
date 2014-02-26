@@ -5,8 +5,10 @@ import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import it.uniroma1.dis.wsngroup.wochat.conf.ServerConfManager;
 import it.uniroma1.dis.wsngroup.wochat.core.WoChatInitializer;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.DataOnTheFly;
+import it.uniroma1.dis.wsngroup.wochat.utils.Constants;
 
 import org.apache.log4j.Logger;
 
@@ -17,7 +19,7 @@ import org.apache.log4j.Logger;
 public class WoChat {
 
 	private static Logger logger = Logger.getLogger(WoChat.class);
-	private final int port;
+	private final Integer port;
 
 	public WoChat(int port) {
 		this.port = port;
@@ -45,8 +47,9 @@ public class WoChat {
 	}
 
 	public static void main(String[] args) {
+		Integer port = Integer.parseInt(ServerConfManager.getInstance().getProperty(Constants.CONF_SERVER_PORT));
 		try {
-			new WoChat(8080).run();
+			new WoChat(port).run();
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}

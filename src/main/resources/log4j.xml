@@ -53,6 +53,15 @@
 		</layout>
 	</appender>
 	
+	<appender name="Answers_Log_File" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="logs/answers.log"/>
+		<param name="Threshold" value="INFO"/>
+		<param name="Append" value="false"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%m%n" />
+		</layout>
+	</appender>
+	
 	<logger name="it.uniroma1.dis.wsngroup.wochat.logging.LogInteraction" additivity="false">
 		<level value="INFO" />
 		<appender-ref ref="Interactions_Log_File" />
@@ -71,6 +80,11 @@
 	<logger name="it.uniroma1.dis.wsngroup.wochat.logging.LogUsersList" additivity="false">
 		<level value="INFO" />
 		<appender-ref ref="Users_Log_File" />
+	</logger>
+	
+	<logger name="it.uniroma1.dis.wsngroup.wochat.logging.LogAnswer" additivity="false">
+		<level value="INFO" />
+		<appender-ref ref="Answers_Log_File" />
 	</logger>
 	
 	<root>

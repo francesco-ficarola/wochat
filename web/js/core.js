@@ -15,6 +15,9 @@ const HTTP_ADMIN_SUCCESS_CONN = 'admin_success_conn';
 const HTTP_ADMIN_FAIL_CONN = 'admin_fail_conn';
 const ADMIN_READY = 'admin_ready';
 const ADMIN_ID = '0000';
+const START_SURVEY_1 = 'start_survey_1';
+const START_SURVEY_2 = 'start_survey_2';
+const START_CHAT = 'start_chat';
 
 const p_users_list_DEFAULT_BACKGROUND = '#dff6ff';
 const p_users_list_HOVER_BACKGROUND = '#beedff';
@@ -186,13 +189,14 @@ function onSocketOpen(e) {
 
 function onSocketClose(e) {
 	console.log('Web Socket closed.');
-	var system_msg = 'Chat went down or you disconnected. Thank you!';
-	var table_loading = '\
+	var system_msg = 'Chat went down or you disconnected.<br /><br />Try to reload this page and see what happens!';
+	var system_div = '\
 				<div id="div-system-msg-container">\
 					<p>' + system_msg + '</p>\
 				</div>';
 
-	$('#div-system-msg').html(table_loading);
+	$('.div-survey').css('display', 'none');
+	$('#div-system-msg').html(system_div);
 	$('#div-system-msg').css('display', 'block');
 }
 
@@ -398,6 +402,35 @@ function onMessageReceived(e) {
 				$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 				
 				$('#ta-message').focus();
+			}
+			
+			else
+			
+			// Response received whenever the admin starts a survey pre-interaction
+			if(jsonMsg.response === START_SURVEY_1) {
+				//TODO: div full page with the survey
+				var survey_form = 'Questions here';
+				var survey_div_container = '\
+							<div class="div-survey-container">\
+								<p>' + survey_form + '</p>\
+							</div>';
+
+				$('.div-survey').html(survey_div_container);
+				$('.div-survey').css('display', 'block');
+			}
+			
+			else
+			
+			// Response received whenever the admin starts a survey post-interaction
+			if(jsonMsg.response === START_SURVEY_2) {
+				//TODO
+			}
+			
+			else
+			
+			// Response received whenever the admin starts the chat
+			if(jsonMsg.response === START_CHAT) {
+				$('.div-survey').css('display', 'none');
 			}
 		}
 		

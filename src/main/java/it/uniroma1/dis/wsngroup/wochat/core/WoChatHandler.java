@@ -1,8 +1,11 @@
 package it.uniroma1.dis.wsngroup.wochat.core;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -42,9 +45,12 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import it.uniroma1.dis.wsngroup.wochat.conf.ServerConfManager;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.DataOnTheFly;
+import it.uniroma1.dis.wsngroup.wochat.dbfly.Questions;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.User;
 import it.uniroma1.dis.wsngroup.wochat.json.MultiUsersResponse;
+import it.uniroma1.dis.wsngroup.wochat.json.QuestionsResponse;
 import it.uniroma1.dis.wsngroup.wochat.json.SingleUserRequest;
 import it.uniroma1.dis.wsngroup.wochat.json.SingleUserResponse;
 import it.uniroma1.dis.wsngroup.wochat.logging.LogConnection;
@@ -375,7 +381,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		/** Messages from the admin */
 		if(userReq.getRequest().equals(Constants.ADMIN_DELIVER_MSG)) {
 			String msgBody = userReq.getData().getMsg().getBody();
-			adminMsg(msgBody);
+			adminMsg(channel, msgBody);
 		}
 		
 		else
@@ -493,9 +499,17 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		}
 		
 		broadcastUsersList(channel);
+		
+		/** Check if any survey mode is already running. If yes, warn the just connected user. */
+		if(data.getMode().equals(Constants.SURVEY1_MODE)) {
+			//TODO
+		} else
+		if(data.getMode().equals(Constants.SURVEY2_MODE)) {
+			//TODO
+		}
 	}
 	
-	private void adminMsg(String msgBody) {
+	private void adminMsg(Channel adminChannel, String msgBody) {
 		logger.debug("[ADMIN] " + msgBody);
 		String splitter[] = msgBody.split(" ");
 		if(splitter.length > 1) {
@@ -531,6 +545,35 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 					
 				} else {
 					logger.warn("Non-existing user ID!");
+				}
+			}
+			
+			else
+			
+			/** Start command */
+			if(command.equals(Constants.ADMIN_CMD_START)) {
+				String parameter = splitter[1];
+				if(parameter.equals("survey1")) {
+					//TODO javascript side implementation and try everything
+					data.setMode(Constants.SURVEY1_MODE);
+					broadcastSurvey(adminChannel, Constants.START_SURVEY_1);
+				} else
+				if(parameter.equals("survey2")) {
+					//TODO javascript side implementation and try everything
+					data.setMode(Constants.SURVEY2_MODE);
+					broadcastSurvey(adminChannel, Constants.START_SURVEY_2);
+				} else
+				if(parameter.equals("chat")) {
+					data.setMode(Constants.CHAT_MODE);
+					broadcastRespToEveryone(Constants.START_CHAT, null, adminChannel);
+				}
+			}
+			
+			else
+				
+			if(command.equals(Constants.ADMIN_CMD_KILL)) {
+				if(splitter[1].equals("wochat")) {
+					System.exit(0);
 				}
 			}
 		}
@@ -572,7 +615,8 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		/** Receiver is disconnected */
 		try {
 			InetAddress inetReceiverIp = InetAddress.getByName(receiverIp);
-			if(!inetReceiverIp.isReachable(5000)) {
+			Integer connectionTimeout = Integer.parseInt(ServerConfManager.getInstance().getProperty(Constants.COMMUNICATION_TIMEOUT));
+			if(!inetReceiverIp.isReachable(connectionTimeout)) {
 				logger.warn("Receiver is disconnected... Deleting from maps.");
 				usersMap_IpId.remove(receiverIp);
 				usersMap_IdIp.remove(userIdTo);
@@ -670,6 +714,41 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		/** Send all users list to the user who wants to know that list */
 		channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(connectedUsersResp)));
+	}
+	
+	private void broadcastRespToEveryone(String resp, User data, Channel channel) {
+		SingleUserResponse respToBeBroadcasted = new SingleUserResponse();
+		respToBeBroadcasted.setResponse(resp);
+		respToBeBroadcasted.setData(data);
+		broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(gson.toJson(respToBeBroadcasted)), ChannelMatchers.isNot(channel));
+	}
+	
+	private void broadcastSurvey(Channel adminChannel, String surveyType) {
+		BufferedReader br = null;
+		try {
+			br = new BufferedReader(new FileReader(Constants.PATH_SURVEY_FILE));
+			List<String> questionsList = new LinkedList<String>();
+			String currentLine;
+			while((currentLine = br.readLine()) != null) {
+				questionsList.add(currentLine);
+			}
+			Questions questions = new Questions();
+			questions.setQuestionsList(questionsList);
+			QuestionsResponse questionsResponse = new QuestionsResponse();
+			questionsResponse.setResponse(surveyType);
+			questionsResponse.setData(questions);
+			broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(gson.toJson(questionsResponse)), ChannelMatchers.isNot(adminChannel));
+		} catch (FileNotFoundException e) {
+			logger.error(e.getMessage(), e);
+		} catch (IOException e) {
+			logger.error(e.getMessage(), e);
+		} finally {
+			try {
+				if (br != null) br.close();
+			} catch (IOException e) {
+				logger.error(e.getMessage(), e);
+			}
+		}
 	}
 	
 	private String getRemoteHost(Channel channel) {

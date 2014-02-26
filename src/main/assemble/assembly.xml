@@ -26,6 +26,7 @@
 	    <includes>
 	        <include>README*</include>
 	        <include>web/</include>
+	        <include>conf/</include>
 	    </includes>
 	</fileSet>
         <!--
