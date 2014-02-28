@@ -200,7 +200,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 					String admin = splitter[1];
 					SingleUserResponse responseJson = new SingleUserResponse();
 					
-					if(admin.equals(Constants.ADMIN_USERNAME)) {
+					if(admin.equals(data.getUsernameAdmin())) {
 						responseJson.setResponse(Constants.HTTP_ADMIN_SUCCESS_CONN);
 						responseJson.setData(new User().setUsername(admin));
 					} else {
@@ -366,7 +366,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			logger.debug("Request to join the chat from: " + user.getUsername());
 			
 			/** Manage admin */
-			if(user.getUsername().equals(Constants.ADMIN_USERNAME)) {
+			if(user.getUsername().equals(data.getUsernameAdmin())) {
 				manageAdmin(channel);
 			}
 			
@@ -554,12 +554,10 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			if(command.equals(Constants.ADMIN_CMD_START)) {
 				String parameter = splitter[1];
 				if(parameter.equals("survey1")) {
-					//TODO javascript side implementation and try everything
 					data.setMode(Constants.SURVEY1_MODE);
 					broadcastSurvey(adminChannel, Constants.START_SURVEY_1);
 				} else
 				if(parameter.equals("survey2")) {
-					//TODO javascript side implementation and try everything
 					data.setMode(Constants.SURVEY2_MODE);
 					broadcastSurvey(adminChannel, Constants.START_SURVEY_2);
 				} else

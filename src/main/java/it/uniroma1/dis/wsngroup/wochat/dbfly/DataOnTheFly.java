@@ -3,6 +3,7 @@ package it.uniroma1.dis.wsngroup.wochat.dbfly;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import it.uniroma1.dis.wsngroup.wochat.conf.ServerConfManager;
 import it.uniroma1.dis.wsngroup.wochat.utils.Constants;
 
 import java.util.Collections;
@@ -22,6 +23,7 @@ public class DataOnTheFly {
 	private long msgCounter;
 	private int userCounter;
 	private String mode;
+	private String usernameAdmin;
 	
 	public DataOnTheFly() {
 		/** Hashtable is synchronized: just one invocation at time */
@@ -41,6 +43,7 @@ public class DataOnTheFly {
 		msgCounter = 0;
 		userCounter = 0;
 		mode = Constants.CHAT_MODE;
+		usernameAdmin = ServerConfManager.getInstance().getProperty(Constants.ADMIN_USERNAME);
 	}
 
 	public Map<String, String> get_usersMap_IpId() {
@@ -89,5 +92,9 @@ public class DataOnTheFly {
 
 	public void setMode(String mode) {
 		this.mode = mode;
+	}
+
+	public String getUsernameAdmin() {
+		return usernameAdmin;
 	}
 }

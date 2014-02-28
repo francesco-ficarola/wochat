@@ -37,11 +37,13 @@ Log-files
 
 All log-files are saved in the "logs" folder (from the repository root: target/WoChat/logs).
 
+* *wochat.log* : system log
 * *connections.log* : information about users' connections
 * *interactions.log* : users' interactions (format parsable by [OpenBeaconParser](https://github.com/francesco-ficarola/OpenBeaconParser))
-* *messages.log* : users' messages in CSV format
-* *userslist.log* : list of all participants
-* *wochat.log* : system log
+* *messages.csv* : users' messages in CSV format
+* *userslist.csv* : list of all participants in CSV format
+* *survey1.csv* : answers for the first survey in CSV format
+* *survey2.csv* : answers for the second survey in CSV format
 
 Screenshots
 -----------

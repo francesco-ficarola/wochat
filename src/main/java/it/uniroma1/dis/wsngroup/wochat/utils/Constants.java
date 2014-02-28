@@ -4,6 +4,7 @@ public class Constants {
 	public static final String PATH_CONF_FILE = "conf/woc.properties";
 	public static final String CONF_SERVER_PORT = "server.port";
 	public static final String COMMUNICATION_TIMEOUT = "communication.timeout";
+	public static final String ADMIN_USERNAME = "admin.username";
 	
 	public static final String CVS_DELIMITER = "; ";
 	public static final String WEBSOCKET_PATH = "/chat";
@@ -21,7 +22,6 @@ public class Constants {
 	public static final String ADMIN_DELIVER_MSG = "admin_deliver_msg";
 	public static final String FAIL_DELIVERING = "fail_delivering";
 	public static final String FORWARD_TO_OTHER_CHANNELS = "forward_to_other_channels";
-	public static final String ADMIN_USERNAME = "connect_adm0X0";
 	public static final String HTTP_ADMIN_SUCCESS_CONN = "admin_success_conn";
 	public static final String HTTP_ADMIN_FAIL_CONN = "admin_fail_conn";
 	public static final String ADMIN_READY = "admin_ready";
@@ -38,4 +38,5 @@ public class Constants {
 	public static final String CHAT_MODE = "chat_mode";
 	public static final String SURVEY1_MODE = "survey1_mode";
 	public static final String SURVEY2_MODE = "survey2_mode";
+	
 }

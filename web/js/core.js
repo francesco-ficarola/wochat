@@ -408,11 +408,20 @@ function onMessageReceived(e) {
 			
 			// Response received whenever the admin starts a survey pre-interaction
 			if(jsonMsg.response === START_SURVEY_1) {
-				//TODO: div full page with the survey
-				var survey_form = 'Questions here';
+				var survey_form = '';
+				
+				var jsonQuestions = jsonMsg.data.questionsList;
+				for(var i in jsonQuestions) {
+					var answersCnt = parseInt(i) + 1;
+					survey_form += '<p>' + 
+							jsonQuestions[i] + '<br />' +
+							'<input type="text" name="answer' + answersCnt + '" id="answer' + answersCnt + '" maxlength="20" />' +
+							'</p>';
+				}
+
 				var survey_div_container = '\
 							<div class="div-survey-container">\
-								<p>' + survey_form + '</p>\
+								' + survey_form + '\
 							</div>';
 
 				$('.div-survey').html(survey_div_container);

@@ -308,13 +308,21 @@ footer {
 }
 
 .div-survey-container {
+	width: 60%;
+	padding: 10px;
 	color: #fff;
 	font-size: 12pt;
 	font-weight: bold;
-	text-align: center;
+	text-align: left;
 	margin-top: 10%;
 	margin-left: auto;
 	margin-right: auto;
+	background-color: #222;
+	border: 4px double #fff
+}
+
+.div-survey-container p {
+	
 }
 
 .p-info {
