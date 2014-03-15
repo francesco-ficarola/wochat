@@ -11,7 +11,7 @@ var DELIVER_MSG = 'deliver_msg';
 var ADMIN_DELIVER_MSG = 'admin_deliver_msg';
 var FAIL_DELIVERING = 'fail_delivering';
 var FORWARD_TO_OTHER_CHANNELS = 'forward_to_other_channels';
-var ACK_MSG = "ack";
+var ACK_MSG = 'ack';
 var HTTP_ADMIN_SUCCESS_CONN = 'admin_success_conn';
 var ADMIN_READY = 'admin_ready';
 var ADMIN_ID = '0000';
@@ -20,6 +20,11 @@ var START_SURVEY_2 = 'start_survey_2';
 var START_CHAT = 'start_chat';
 var ANSWERS_SURVEY1 = 'answers_survey1';
 var ANSWERS_SURVEY2 = 'answers_survey2';
+var USER_KICKED = 'user_kicked';
+var CHAT_MODE = 'chat_mode';
+var SURVEY1_MODE = 'survey1_mode';
+var SURVEY2_MODE = 'survey2_mode';
+var ADMIN_MSG = 'admin_msg';
 
 var p_users_list_DEFAULT_BACKGROUND = '#dff6ff';
 var p_users_list_HOVER_BACKGROUND = '#beedff';
@@ -454,16 +459,97 @@ function onMessageReceived(e) {
 			
 			// Response received whenever the admin is authorized to join chat
 			if(jsonMsg.response === ADMIN_READY) {
-				id = '0000';
+				id = ADMIN_ID;
 				var chat_title = 'Broadcasting to all users...';
 				$('#p-chat-title').hide().html(chat_title).fadeIn('slow');
 				
-				recipient_id = 'broadcast-users';
+				recipient_id = ADMIN_ID;
 				checkRecipientDiv(recipient_id, 'block');
 				$recipient_div = $('#div-' + recipient_id);
 				$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 				
 				$('#ta-message').focus();
+			}
+			
+			else
+			
+			if(jsonMsg.response === USER_KICKED) {
+				var userKicked = jsonMsg.data.username;
+				var msg_body = userKicked + ' was kicked.';
+				var $recipient_div = $('#div-' + recipient_id);
+				var msg_struct = '\
+						<div class="div-chat-user-msg">\
+							<div class="div-chat-username" style="background-color:red;">system message</div>\
+							<div class="div-chat-message">' + msg_body + '</div>\
+						</div>';
+				$recipient_div.append(msg_struct);
+				$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
+			}
+			
+			else
+			
+			// Response received whenever admin executed the chat mode
+			if(jsonMsg.response === CHAT_MODE) {
+				var msg_body = 'Chat mode enabled.';
+				var $recipient_div = $('#div-' + recipient_id);
+				var msg_struct = '\
+						<div class="div-chat-user-msg">\
+							<div class="div-chat-username" style="background-color:red;">system message</div>\
+							<div class="div-chat-message">' + msg_body + '</div>\
+						</div>';
+				$recipient_div.append(msg_struct);
+				$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
+			}
+			
+			else
+			
+			// Response received whenever admin executed the chat mode
+			if(jsonMsg.response === SURVEY1_MODE) {
+				var msg_body = 'Survey1 mode enabled.';
+				var $recipient_div = $('#div-' + recipient_id);
+				var msg_struct = '\
+						<div class="div-chat-user-msg">\
+							<div class="div-chat-username" style="background-color:red;">system message</div>\
+							<div class="div-chat-message">' + msg_body + '</div>\
+						</div>';
+				$recipient_div.append(msg_struct);
+				$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
+			}
+			
+			else
+			
+			// Response received whenever admin executed the chat mode
+			if(jsonMsg.response === SURVEY2_MODE) {
+				var msg_body = 'Survey2 mode enabled.';
+				var $recipient_div = $('#div-' + recipient_id);
+				var msg_struct = '\
+						<div class="div-chat-user-msg">\
+							<div class="div-chat-username" style="background-color:red;">system message</div>\
+							<div class="div-chat-message">' + msg_body + '</div>\
+						</div>';
+				$recipient_div.append(msg_struct);
+				$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
+			}
+			
+			else
+			
+			// Messages from admin
+			if(jsonMsg.response === ADMIN_MSG) {
+				var msg_body = jsonMsg.data.msg.body;
+				if(recipient_id === undefined || recipient_id === null) {
+					recipient_id = 'temp';
+				}
+				
+				checkRecipientDiv(recipient_id, 'block');
+				
+				var $recipient_div = $('#div-' + recipient_id);
+				var msg_struct = '\
+						<div class="div-chat-user-msg">\
+							<div class="div-chat-username" style="background-color:red;">system message</div>\
+							<div class="div-chat-message">' + msg_body + '</div>\
+						</div>';
+				$recipient_div.append(msg_struct);
+				$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 			}
 			
 			else

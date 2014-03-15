@@ -31,6 +31,7 @@ public class Constants {
 	public static final String ADMIN_CMD_DISCONNECT = "/disconnect";
 	public static final String ADMIN_CMD_START = "/start";
 	public static final String ADMIN_CMD_KILL = "/kill";
+	public static final String ADMIN_CMD_MSG = "/msg";
 	
 	public static final String PATH_SURVEY_FILE = "conf/woc.survey";
 	public static final String START_SURVEY_1 = "start_survey_1";
@@ -39,8 +40,10 @@ public class Constants {
 	public static final String ANSWERS_SURVEY2 = "answers_survey2";
 	public static final String START_CHAT = "start_chat";
 	
+	public static final String USER_KICKED = "user_kicked";
 	public static final String CHAT_MODE = "chat_mode";
 	public static final String SURVEY1_MODE = "survey1_mode";
 	public static final String SURVEY2_MODE = "survey2_mode";
+	public static final String ADMIN_MSG = "admin_msg";
 	
 }

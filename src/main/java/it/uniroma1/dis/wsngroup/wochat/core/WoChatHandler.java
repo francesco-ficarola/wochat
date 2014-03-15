@@ -48,6 +48,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.DataOnTheFly;
+import it.uniroma1.dis.wsngroup.wochat.dbfly.Message;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.Questions;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.User;
 import it.uniroma1.dis.wsngroup.wochat.json.MultiUsersResponse;
@@ -650,6 +651,12 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 					String ipToDisconnect = usersMap_IdIp.get(idToDisconnect);
 					ChannelGroup channelsToDisconnect = channelsMap_IpChannelGroup.get(ipToDisconnect);
 					deleteData(ipToDisconnect, idToDisconnect, userToDisconnect, channelsToDisconnect);
+					SingleUserResponse adminResp = new SingleUserResponse();
+					adminResp.setResponse(Constants.USER_KICKED);
+					User userKicked = new User();
+					userKicked.setUsername(userToDisconnect);
+					adminResp.setData(userKicked);
+					adminChannel.writeAndFlush(new TextWebSocketFrame(gson.toJson(adminResp)));
 				} else {
 					logger.warn("Non-existing user ID!");
 				}
@@ -662,20 +669,48 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 				String parameter = splitter[1];
 				if(parameter.equals("survey1")) {
 					data.setMode(Constants.SURVEY1_MODE);
+					SingleUserResponse adminResp = new SingleUserResponse();
+					adminResp.setResponse(Constants.SURVEY1_MODE);
+					adminChannel.writeAndFlush(new TextWebSocketFrame(gson.toJson(adminResp)));
 					broadcastSurvey(adminChannel, Constants.START_SURVEY_1);
 				} else
 				if(parameter.equals("survey2")) {
 					data.setMode(Constants.SURVEY2_MODE);
+					SingleUserResponse adminResp = new SingleUserResponse();
+					adminResp.setResponse(Constants.SURVEY2_MODE);
+					adminChannel.writeAndFlush(new TextWebSocketFrame(gson.toJson(adminResp)));
 					broadcastSurvey(adminChannel, Constants.START_SURVEY_2);
 				} else
 				if(parameter.equals("chat")) {
 					data.setMode(Constants.CHAT_MODE);
+					SingleUserResponse adminResp = new SingleUserResponse();
+					adminResp.setResponse(Constants.CHAT_MODE);
+					adminChannel.writeAndFlush(new TextWebSocketFrame(gson.toJson(adminResp)));
 					broadcastRespToEveryone(Constants.START_CHAT, null, adminChannel);
 				}
 			}
 			
 			else
-				
+			
+			/** Message command */
+			if(command.equals(Constants.ADMIN_CMD_MSG)) {
+				String msgString = "";
+				for(int i=1; i<splitter.length; i++) {
+					msgString += splitter[i];
+					if(i < splitter.length - 1) {
+						msgString += " ";
+					}
+				}
+				User allUsers = new User();
+				Message msgToBroadcast = new Message();
+				msgToBroadcast.setBody(msgString);
+				allUsers.setMsg(msgToBroadcast);
+				broadcastRespToEveryone(Constants.ADMIN_MSG, allUsers, adminChannel);
+			}
+			
+			else
+			
+			/** Kill command */
 			if(command.equals(Constants.ADMIN_CMD_KILL)) {
 				if(splitter[1].equals("wochat")) {
 					System.exit(0);
