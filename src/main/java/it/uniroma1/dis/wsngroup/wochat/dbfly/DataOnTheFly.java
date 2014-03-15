@@ -3,8 +3,8 @@ package it.uniroma1.dis.wsngroup.wochat.dbfly;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import it.uniroma1.dis.wsngroup.wochat.conf.Constants;
 import it.uniroma1.dis.wsngroup.wochat.conf.ServerConfManager;
-import it.uniroma1.dis.wsngroup.wochat.utils.Constants;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,7 +27,9 @@ public class DataOnTheFly {
 	private int userCounter;
 	private String mode;
 	private String usernameAdmin;
+	private Integer communicationTimeout;
 	private Integer maxCheckingTimes;
+	private Boolean killme;
 	
 	public DataOnTheFly() {
 		/** Hashtable is synchronized: just one invocation at time */
@@ -51,7 +53,9 @@ public class DataOnTheFly {
 		userCounter = 0;
 		mode = Constants.CHAT_MODE;
 		usernameAdmin = ServerConfManager.getInstance().getProperty(Constants.ADMIN_USERNAME);
+		communicationTimeout = Integer.parseInt(ServerConfManager.getInstance().getProperty(Constants.COMMUNICATION_TIMEOUT));
 		maxCheckingTimes = Integer.parseInt(ServerConfManager.getInstance().getProperty(Constants.MAX_CHECKING_TIMES));
+		killme = Boolean.parseBoolean(ServerConfManager.getInstance().getProperty(Constants.KILL_ME_CONF));
 	}
 
 	public Map<String, String> get_usersMap_IpId() {
@@ -114,7 +118,15 @@ public class DataOnTheFly {
 		return usernameAdmin;
 	}
 
+	public Integer getCommunicationTimeout() {
+		return communicationTimeout;
+	}
+
 	public Integer getMaxCheckingTimes() {
 		return maxCheckingTimes;
+	}
+
+	public Boolean getKillme() {
+		return killme;
 	}
 }

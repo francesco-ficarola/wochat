@@ -1,6 +1,5 @@
 package it.uniroma1.dis.wsngroup.wochat.conf;
 
-import it.uniroma1.dis.wsngroup.wochat.utils.Constants;
 
 import java.io.FileInputStream;
 import java.util.Properties;

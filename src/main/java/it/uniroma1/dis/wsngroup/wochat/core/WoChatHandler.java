@@ -47,6 +47,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import it.uniroma1.dis.wsngroup.wochat.conf.Constants;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.DataOnTheFly;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.Message;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.Questions;
@@ -61,7 +62,6 @@ import it.uniroma1.dis.wsngroup.wochat.logging.LogConnection;
 import it.uniroma1.dis.wsngroup.wochat.logging.LogInteraction;
 import it.uniroma1.dis.wsngroup.wochat.logging.LogMessage;
 import it.uniroma1.dis.wsngroup.wochat.logging.LogUsersList;
-import it.uniroma1.dis.wsngroup.wochat.utils.Constants;
 import it.uniroma1.dis.wsngroup.wochat.utils.Functions;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -574,7 +574,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 							}
 						}
 					}
-				}, Constants.INTERVAL_SECONDS_PENDING_MESSAGES_CHECKING, Constants.INTERVAL_SECONDS_PENDING_MESSAGES_CHECKING, TimeUnit.SECONDS);
+				}, data.getCommunicationTimeout(), data.getCommunicationTimeout(), TimeUnit.SECONDS);
 			}
 		}
 		
@@ -725,9 +725,18 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		User userFrom = userReq.getData();
 		String userIdFrom = userFrom.getId();
+		String usernameFrom = userFrom.getUsername();
 		User userTo = userFrom.getMsg().getReceiver();
 		String userIdTo = userTo.getId();
 		String msgBody = userFrom.getMsg().getBody();
+		
+		/** KillMe now */
+		if(msgBody.equals(Constants.USER_KILL_ME_CMD)) {
+			if(data.getKillme().equals(true)) {
+				deleteData(remoteHost, userIdFrom, usernameFrom, channelsSender);
+			}
+			return;
+		}
 		
 		/** Req message must be forwarded to other opened channels of sender */
 		if(channelsSender.size() > 1) {

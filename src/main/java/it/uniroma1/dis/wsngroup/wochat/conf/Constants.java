@@ -1,4 +1,4 @@
-package it.uniroma1.dis.wsngroup.wochat.utils;
+package it.uniroma1.dis.wsngroup.wochat.conf;
 
 public class Constants {
 	public static final String PATH_CONF_FILE = "conf/woc.properties";
@@ -6,6 +6,7 @@ public class Constants {
 	public static final String COMMUNICATION_TIMEOUT = "communication.timeout";
 	public static final String ADMIN_USERNAME = "admin.username";
 	public static final String MAX_CHECKING_TIMES = "checkingtimes.pendingmessages";
+	public static final String KILL_ME_CONF = "killme.now";
 	
 	public static final String CVS_DELIMITER = "; ";
 	public static final String WEBSOCKET_PATH = "/chat";
@@ -26,8 +27,8 @@ public class Constants {
 	public static final String HTTP_ADMIN_SUCCESS_CONN = "admin_success_conn";
 	public static final String ADMIN_READY = "admin_ready";
 	public static final String ACK_MSG = "ack";
-	public static final Integer INTERVAL_SECONDS_PENDING_MESSAGES_CHECKING = 5;
 	
+	public static final String USER_KILL_ME_CMD = "/killme now";
 	public static final String ADMIN_CMD_DISCONNECT = "/disconnect";
 	public static final String ADMIN_CMD_START = "/start";
 	public static final String ADMIN_CMD_KILL = "/kill";

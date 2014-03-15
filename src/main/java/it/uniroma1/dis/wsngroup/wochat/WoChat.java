@@ -5,10 +5,10 @@ import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import it.uniroma1.dis.wsngroup.wochat.conf.Constants;
 import it.uniroma1.dis.wsngroup.wochat.conf.ServerConfManager;
 import it.uniroma1.dis.wsngroup.wochat.core.WoChatInitializer;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.DataOnTheFly;
-import it.uniroma1.dis.wsngroup.wochat.utils.Constants;
 
 import org.apache.log4j.Logger;
 
