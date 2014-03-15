@@ -1,28 +1,30 @@
-const HTTP_SUCCESS_CONN = 'success_conn';
-const HTTP_FAIL_CONN = 'fail_conn';
-const HTTP_ALREADY_CONN = 'already_conn';
-const USERS_ADD = 'users_add';
-const USERS_REM = 'users_rem';
-const GET_CONN_STATUS = 'get_conn_status';
-const NEW_USER_STATUS = 'new_user_status';
-const REG_USER_STATUS = 'reg_user_status';
-const JOIN_CHAT = 'join_chat';
-const DELIVER_MSG = 'deliver_msg';
-const ADMIN_DELIVER_MSG = 'admin_deliver_msg';
-const FAIL_DELIVERING = 'fail_delivering';
-const FORWARD_TO_OTHER_CHANNELS = 'forward_to_other_channels';
-const HTTP_ADMIN_SUCCESS_CONN = 'admin_success_conn';
-const HTTP_ADMIN_FAIL_CONN = 'admin_fail_conn';
-const ADMIN_READY = 'admin_ready';
-const ADMIN_ID = '0000';
-const START_SURVEY_1 = 'start_survey_1';
-const START_SURVEY_2 = 'start_survey_2';
-const START_CHAT = 'start_chat';
+var HTTP_SUCCESS_CONN = 'success_conn';
+var HTTP_FAIL_CONN = 'fail_conn';
+var HTTP_ALREADY_CONN = 'already_conn';
+var USERS_ADD = 'users_add';
+var USERS_REM = 'users_rem';
+var GET_CONN_STATUS = 'get_conn_status';
+var NEW_USER_STATUS = 'new_user_status';
+var REG_USER_STATUS = 'reg_user_status';
+var JOIN_CHAT = 'join_chat';
+var DELIVER_MSG = 'deliver_msg';
+var ADMIN_DELIVER_MSG = 'admin_deliver_msg';
+var FAIL_DELIVERING = 'fail_delivering';
+var FORWARD_TO_OTHER_CHANNELS = 'forward_to_other_channels';
+var ACK_MSG = "ack";
+var HTTP_ADMIN_SUCCESS_CONN = 'admin_success_conn';
+var ADMIN_READY = 'admin_ready';
+var ADMIN_ID = '0000';
+var START_SURVEY_1 = 'start_survey_1';
+var START_SURVEY_2 = 'start_survey_2';
+var START_CHAT = 'start_chat';
+var ANSWERS_SURVEY1 = 'answers_survey1';
+var ANSWERS_SURVEY2 = 'answers_survey2';
 
-const p_users_list_DEFAULT_BACKGROUND = '#dff6ff';
-const p_users_list_HOVER_BACKGROUND = '#beedff';
-const p_users_list_CLICKED_BACKGROUND = '#00baff';
-const p_users_list_NEW_MESSAGE_BACKGROUND = '#beedff';
+var p_users_list_DEFAULT_BACKGROUND = '#dff6ff';
+var p_users_list_HOVER_BACKGROUND = '#beedff';
+var p_users_list_CLICKED_BACKGROUND = '#00baff';
+var p_users_list_NEW_MESSAGE_BACKGROUND = '#beedff';
 
 var service_location;
 var socket;
@@ -38,10 +40,8 @@ $(document).ready(function() {
 	div_chat_log = $('#div-chat-log');
 	div_users_list = $('#div-users-list');
 
-	if(!window.WebSocket) {
-	
-		$(document.body).html('<p style="color:red; text-align:center; font-weight:bold;">Error: Your browser or device does not support Web Socket. Try Google Chrome!</p>');
-	
+	if(!window.WebSocket || navigator.appName != 'Netscape') {
+		$(document.body).html('<p style="color:red; text-align:center; font-weight:bold;">Error: your browser does not support websockets.<br />Try the latest version of <a href="https://www.google.com/chrome/" class="bodylink">Google Chrome</a></p>');
 	} else {
 		// Function exists
 		$.fn.exists = function() { return this.length>0; }
@@ -117,7 +117,7 @@ $(document).ready(function() {
 				console.log('Recipient: ' + recipient_id + ', ' + recipient_username);
 				
 				var chat_title = 'Chatting with <span style="color:#ca41f7">' + recipient_username + '</span> . . .';
-				$('#span-chat-title').hide().html(chat_title).fadeIn('slow');
+				$('#p-chat-title').hide().html(chat_title).fadeIn('slow');
 				
 				// Hide all previous chat box
 				$('.div-chat-text').css('display', 'none');
@@ -159,8 +159,60 @@ $(document).ready(function() {
 				}
 			} else {
 				var chat_title = 'Click on a user in the users\' list and start chatting!';
-				$('#span-chat-title').hide().html(chat_title).fadeIn('slow');
+				$('#p-chat-title').hide().html(chat_title).fadeIn('slow');
 				console.warn("recipient_id is undefined!");
+			}
+		});
+		
+		$(document).on('click', '#survey1-submit-button', function() {
+			var message = '{ "request": "' + ANSWERS_SURVEY1 + '", "data": { "id": "' + id + '", "username": "' + username + '", "answersSurvey1": ['; // will be complited in the following
+			var num_answers = $('.survey1-answers').length;
+			var readyToSend = true;
+			$('.survey1-answers').each(function(index) {
+				if(!$(this).val().match(/^\d+$/)) {
+					alert('Please answer all questions by entering only numeric characters!');
+					readyToSend = false;
+					return false;
+				}
+				message += $(this).val();
+				if(index < num_answers - 1) {
+				 	message += ', ';
+				}
+			});
+			message += '] } }';
+			
+			if(readyToSend) {
+				console.log(message);
+				sendMessage(message);
+				
+				var completed_msg = 'Thank you. Please wait for other participants...';
+				$('.div-survey-container').html(completed_msg);
+			}
+		});
+		
+		$(document).on('click', '#survey2-submit-button', function() {
+			var message = '{ "request": "' + ANSWERS_SURVEY2 + '", "data": { "id": "' + id + '", "username": "' + username + '", "answersSurvey2": ['; // will be complited in the following
+			var num_answers = $('.survey2-answers').length;
+			var readyToSend = true;
+			$('.survey2-answers').each(function(index) {
+				if(!$(this).val().match(/^\d+$/)) {
+					alert('Please answer all questions by entering only numeric characters!');
+					readyToSend = false;
+					return false;
+				}
+				message += $(this).val();
+				if(index < num_answers - 1) {
+				 	message += ', ';
+				}
+			});
+			message += '] } }';
+			
+			if(readyToSend) {
+				console.log(message);
+				sendMessage(message);
+				
+				var completed_msg = 'Thank you. Please wait for other participants...';
+				$('.div-survey-container').html(completed_msg);
 			}
 		});
 	}
@@ -173,7 +225,7 @@ function connectToServer() {
 		socket.onmessage = onMessageReceived;
 		socket.onopen = onSocketOpen;
 		socket.onclose = onSocketClose;
-		//TODO onerror
+		socket.onerror = onError;
 	} catch(exception) {
 		chatLog('Error: ' + exception, 'p-warning');
 	}
@@ -201,8 +253,12 @@ function onSocketClose(e) {
 }
 
 
+function onError(e) {
+	console.log('WebSocket Error ' + e);
+}
+
+
 function onMessageReceived(e) {
-	console.log('Message received.');
 	var msg = e.data;
 	console.log(msg);
 	try {
@@ -241,7 +297,9 @@ function onMessageReceived(e) {
 						id = usersList[i].id;
 						console.log('My ID is: ' + id);
 					}
-					div_users_list.append('<p class="p-users-list" id="' + usersList[i].id + '" title="' + usersList[i].username + '">' + usersList[i].username + '</p>');
+					if(!$('#' + usersList[i].id).exists()) {
+						div_users_list.append('<p class="p-users-list" id="' + usersList[i].id + '" title="' + usersList[i].username + '">' + usersList[i].username + '</p>');
+					}
 				}
 			}
 			
@@ -271,7 +329,7 @@ function onMessageReceived(e) {
 							if(recipient_id === receiver_id) {
 								recipient_id = null;
 								var chat_title = 'Click on a user in the users\' list and start chatting!';
-								$('#span-chat-title').hide().html(chat_title).fadeIn('slow');
+								$('#p-chat-title').hide().html(chat_title).fadeIn('slow');
 							}
 						}
 					}
@@ -287,6 +345,7 @@ function onMessageReceived(e) {
 				var username_from = jsonUser.username;
 				var msg_json = jsonUser.msg;
 				var my_received_id = msg_json.receiver.id;
+				var seqHex = msg_json.seqHex;
 				
 				if(id === my_received_id) {
 					
@@ -327,6 +386,9 @@ function onMessageReceived(e) {
 				} else {
 					console.error('Something went wrong... ID (' + id + ') and received ID (' + my_received_id + ') are not equal!');
 				}
+				
+				var ackMsg = '{ "request": "' + ACK_MSG + '", "data": { "msg": { "seqHex": "' + seqHex + '" } } }';
+				sendMessage(ackMsg);
 			}
 			
 			else
@@ -341,7 +403,7 @@ function onMessageReceived(e) {
 				if(id === id_from) {
 					// if I'm chatting with a disconnected user...
 					if(recipient_id === receiver_id && $('#div-' + receiver_id).exists()) {
-						var msg_body = 'Message delivering was failed.';
+						var msg_body = 'Message delivering was failed!';
 						var $recipient_div = $('#div-' + receiver_id);
 						var msg_struct = '\
 								<div class="div-chat-user-msg">\
@@ -394,7 +456,7 @@ function onMessageReceived(e) {
 			if(jsonMsg.response === ADMIN_READY) {
 				id = '0000';
 				var chat_title = 'Broadcasting to all users...';
-				$('#span-chat-title').hide().html(chat_title).fadeIn('slow');
+				$('#p-chat-title').hide().html(chat_title).fadeIn('slow');
 				
 				recipient_id = 'broadcast-users';
 				checkRecipientDiv(recipient_id, 'block');
@@ -409,15 +471,18 @@ function onMessageReceived(e) {
 			// Response received whenever the admin starts a survey pre-interaction
 			if(jsonMsg.response === START_SURVEY_1) {
 				var survey_form = '';
-				
 				var jsonQuestions = jsonMsg.data.questionsList;
 				for(var i in jsonQuestions) {
 					var answersCnt = parseInt(i) + 1;
 					survey_form += '<p>' + 
 							jsonQuestions[i] + '<br />' +
-							'<input type="text" name="answer' + answersCnt + '" id="answer' + answersCnt + '" maxlength="20" />' +
+							'<input type="text" name="answer' + answersCnt + '" id="answer' + answersCnt + '" class="survey1-answers" maxlength="20" />' +
 							'</p>';
 				}
+				
+				survey_form += '<p>' +
+						'<input type="submit" name="survey1-submit-button" id="survey1-submit-button" value="Send" onfocus="this.blur();" />' +
+						'</p>';
 
 				var survey_div_container = '\
 							<div class="div-survey-container">\
@@ -432,7 +497,27 @@ function onMessageReceived(e) {
 			
 			// Response received whenever the admin starts a survey post-interaction
 			if(jsonMsg.response === START_SURVEY_2) {
-				//TODO
+				var survey_form = '';
+				var jsonQuestions = jsonMsg.data.questionsList;
+				for(var i in jsonQuestions) {
+					var answersCnt = parseInt(i) + 1;
+					survey_form += '<p>' + 
+							jsonQuestions[i] + '<br />' +
+							'<input type="text" name="answer' + answersCnt + '" id="answer' + answersCnt + '" class="survey2-answers" maxlength="20" />' +
+							'</p>';
+				}
+				
+				survey_form += '<p>' +
+						'<input type="submit" name="survey2-submit-button" id="survey2-submit-button" value="Send" onfocus="this.blur();" />' +
+						'</p>';
+
+				var survey_div_container = '\
+							<div class="div-survey-container">\
+								' + survey_form + '\
+							</div>';
+
+				$('.div-survey').html(survey_div_container);
+				$('.div-survey').css('display', 'block');
 			}
 			
 			else
@@ -498,10 +583,6 @@ function registrationFormListener(event) {
 					// admin_success_conn: admin connection
 					if(jsonMsg.response === HTTP_ADMIN_SUCCESS_CONN) {
 						loggedin(jsonMsg.data.username);
-					} else
-					// admin_fail_conn: invalid admin username
-					if(jsonMsg.response === HTTP_ADMIN_FAIL_CONN) {
-						$('#div-username-warning').text('Admin username is not valid!').show().fadeOut(5000);
 					}
 				} else {
 					console.error('The JSON object does not contain the response property');
@@ -531,7 +612,7 @@ function loggedin(json_username) {
 	sendMessage(join_chat_message);
 	
 	var chat_title = 'Click on a user in the users\' list and start chatting!';
-	$('#span-chat-title').hide().html(chat_title).fadeIn('slow');
+	$('#p-chat-title').hide().html(chat_title).fadeIn('slow');
 }
 
 

@@ -7,13 +7,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -45,7 +47,6 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import it.uniroma1.dis.wsngroup.wochat.conf.ServerConfManager;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.DataOnTheFly;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.Questions;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.User;
@@ -53,6 +54,8 @@ import it.uniroma1.dis.wsngroup.wochat.json.MultiUsersResponse;
 import it.uniroma1.dis.wsngroup.wochat.json.QuestionsResponse;
 import it.uniroma1.dis.wsngroup.wochat.json.SingleUserRequest;
 import it.uniroma1.dis.wsngroup.wochat.json.SingleUserResponse;
+import it.uniroma1.dis.wsngroup.wochat.logging.LogAnswers1;
+import it.uniroma1.dis.wsngroup.wochat.logging.LogAnswers2;
 import it.uniroma1.dis.wsngroup.wochat.logging.LogConnection;
 import it.uniroma1.dis.wsngroup.wochat.logging.LogInteraction;
 import it.uniroma1.dis.wsngroup.wochat.logging.LogMessage;
@@ -76,17 +79,20 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 	private DataOnTheFly data;
 	private Map<String, String> usersMap_IpId;
 	private Map<String, String> usersMap_IdIp;
+	private Map<String, Set<String>> ackMap_IpAcks;
+	private Map<String, Integer> checkPendingMsgMap_IpChecks;
 	private Set<String> usernamesSet;
 	private Map<String, String> usersMap_IdUsername;
 	private Map<String, ChannelGroup> channelsMap_IpChannelGroup;
 	private ChannelGroup broadcastChannelGroup;
-	private long msgCounter;
 	
 	public WoChatHandler(DataOnTheFly data) {
 		gson = new Gson();
 		this.data = data;
 		this.usersMap_IpId = this.data.get_usersMap_IpId();
 		this.usersMap_IdIp = this.data.get_usersMap_IdIp();
+		this.ackMap_IpAcks = this.data.get_ackMap_IpAcks();
+		this.checkPendingMsgMap_IpChecks = this.data.get_checkPendingMsgMap_IpChecks();
 		this.usernamesSet = this.data.get_usernamesSet();
 		this.usersMap_IdUsername = this.data.get_usersMap_IdUsername();
 		this.channelsMap_IpChannelGroup = this.data.get_channelsMap_IpChannelGroup();
@@ -187,42 +193,10 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			return;
 		}
 		
-		/** Admin connection */
-		if("/admin".equals(req.getUri())) {
-			ByteBuf receivedContent = req.content();
-			
-			if(receivedContent.isReadable()) {
-				String receivedMsg = receivedContent.toString(CharsetUtil.UTF_8);
-				logger.debug("Request Content: " + receivedMsg);
-				String splitter[] = receivedMsg.split("=");
-				
-				if(splitter.length > 1) {
-					String admin = splitter[1];
-					SingleUserResponse responseJson = new SingleUserResponse();
-					
-					if(admin.equals(data.getUsernameAdmin())) {
-						responseJson.setResponse(Constants.HTTP_ADMIN_SUCCESS_CONN);
-						responseJson.setData(new User().setUsername(admin));
-					} else {
-						responseJson.setResponse(Constants.HTTP_ADMIN_FAIL_CONN);
-					}
-					
-					ByteBuf sendingContent = Unpooled.copiedBuffer(gson.toJson(responseJson), CharsetUtil.UTF_8);
-					FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, sendingContent);
-					
-					res.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8");
-					setContentLength(res, sendingContent.readableBytes());
-		
-					sendHttpResponse(ctx, req, res);
-					return;
-				}
-			}
-		}
-		
 		/** New user's connection */
 		if("/newuser".equals(req.getUri())) {
 			
-			/** Already connected (one browser left on the login page and connected with another one) */
+			/** Just for simple users (not admin): already connected (one browser left on the login page and connected with another one) */
 			String remoteHost = getRemoteHost(ctx.channel());
 			if(usersMap_IpId.containsKey(remoteHost)) {
 				logger.info("User already logged in. Just reload its page...");
@@ -239,7 +213,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 				return;
 			}
 			
-			/** New user */
+			/** User checking... */
 			ByteBuf receivedContent = req.content();
 			if(receivedContent.isReadable()) {
 				String receivedMsg = receivedContent.toString(CharsetUtil.UTF_8);
@@ -250,11 +224,22 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 					String username = splitter[1];
 					SingleUserResponse responseJson = new SingleUserResponse();
 					
+					/** Admin connection */
+					if(username.equals(data.getUsernameAdmin())) {
+						responseJson.setResponse(Constants.HTTP_ADMIN_SUCCESS_CONN);
+						responseJson.setData(new User().setUsername(username));
+					}
+					
+					else
+					
+					/** New User */
 					if(!usernamesSet.contains(username)) {
 						responseJson.setResponse(Constants.HTTP_SUCCESS_CONN);
 						responseJson.setData(new User().setUsername(username));
 						usernamesSet.add(username);
-					} else {
+					}
+					
+					else {
 						responseJson.setResponse(Constants.HTTP_FAIL_CONN);
 					}
 					
@@ -302,13 +287,18 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			
 			/** A closed channel is automatically removed from any group*/
 			logger.debug("Number of channels in the broadcast group: " + broadcastChannelGroup.size());
-			manageDisconnections(ctx.channel());
+			broadcastDisconnections(getRemoteHost(ctx.channel()));
 			return;
 		}
 		
 		if (frame instanceof PingWebSocketFrame) {
+			logger.debug("Ping frame from " + getRemoteHost(ctx.channel()) + ". Sending pong...");
 			ctx.channel().write(new PongWebSocketFrame(frame.content().retain()));
-			logger.debug("Ping-Pong frames...");
+			return;
+		}
+		
+		if (frame instanceof PongWebSocketFrame) {
+			logger.debug("Pong frame from " + getRemoteHost(ctx.channel()));
 			return;
 		}
 		
@@ -390,6 +380,63 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		if(userReq.getRequest().equals(Constants.DELIVER_MSG)) {
 			deliverMsg(userReq, channel);
 		}
+		
+		else
+		
+		/** ACKs */
+		if(userReq.getRequest().equals(Constants.ACK_MSG)) {
+			/** ACK mechanism (only if the checkingtimes.pendingmessages property is greater than 0) */
+			if(data.getMaxCheckingTimes() > 0) {
+				String seqHex = userReq.getData().getMsg().getSeqHex();
+				String remoteHost = getRemoteHost(channel);
+				logger.debug("Received ACK from " + remoteHost + ": " + seqHex);
+				if(ackMap_IpAcks.containsKey(remoteHost)) {
+					Set<String> acksToBeReceived = ackMap_IpAcks.get(remoteHost);
+					acksToBeReceived.remove(seqHex);
+					logger.debug("#Msg with no ACKS for " + remoteHost + ": " + acksToBeReceived.size());
+				}
+				if(checkPendingMsgMap_IpChecks.containsKey(remoteHost)) {
+					logger.debug("Resetting checkPendingMsgMap_IpChecks for " + remoteHost);
+					checkPendingMsgMap_IpChecks.put(remoteHost, 0);
+				}
+			}
+		}
+		
+		else
+			
+		/** Answers to 1st survey */
+		if(userReq.getRequest().equals(Constants.ANSWERS_SURVEY1)) {
+			String id = userReq.getData().getId();
+			List<String> answers = userReq.getData().getAnswersSurvey1();
+			String line = id + Constants.CVS_DELIMITER;
+			for(int i=0; i<answers.size(); i++) {
+				line += answers.get(i);
+				if(i < answers.size() - 1) {
+					line += Constants.CVS_DELIMITER;
+				}
+			}
+			LogAnswers1.logAnswer(line);
+			
+			//TODO: check if all participants have replied; if yes automatically enable chat
+		}
+		
+		else
+			
+		/** Answers to 2nd survey */
+		if(userReq.getRequest().equals(Constants.ANSWERS_SURVEY2)) {
+			String id = userReq.getData().getId();
+			List<String> answers = userReq.getData().getAnswersSurvey2();
+			String line = id + Constants.CVS_DELIMITER;
+			for(int i=0; i<answers.size(); i++) {
+				line += answers.get(i);
+				if(i < answers.size() - 1) {
+					line += Constants.CVS_DELIMITER;
+				}
+			}
+			LogAnswers2.logAnswer(line);
+			
+			//TODO: check if all participants have replied; if yes automatically enable chat
+		}
 	}
 
 	private void manageConnectionStatus(Channel channel) {
@@ -435,7 +482,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 	}
 	
 	private void manageUsers(Channel channel, String username) {
-		String remoteHost = getRemoteHost(channel);
+		final String remoteHost = getRemoteHost(channel);
 		logger.debug("Remote Host: " + remoteHost);
 		
 		/** Add the channel to the ChannelGroup; it will not add duplicate, like a set */
@@ -488,24 +535,104 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			LogConnection.logConnection("[NEW CONNECTION]\t(" + remoteHost + ", " + id + ", " + username + ") connected. #Channels: 1");
 			
 			long currentTimestamp = System.currentTimeMillis() / 1000L;
-			msgCounter = data.getMsgCounter();
-			data.setMsgCounter(msgCounter + 1);
-			String seqHex = "0x" + String.format("%08x", msgCounter & 0xFFFFFFFF);
+			data.incrementMsgCounter();
+			String seqHex = "0x" + String.format("%08x", data.getMsgCounter() & 0xFFFFFFFF);
 			String sighting = "S t=" + currentTimestamp + " ip=0x00000000" + " id=" + id + " boot_count=0" + " seq=" + seqHex + " strgth=3 flgs=0 last_seen=0";
 			LogInteraction.logInteraction(sighting);
 			
 			/** Broadcast new user to everyone */
 			broadcastUserStatus(id, username, channel, Constants.USERS_ADD);
+			
+			/** This part of code is to periodically check if there are pending messages, i.e., disconnections. */
+			/** ACK mechanism (only if the checkingtimes.pendingmessages property is greater than 0) */
+			if(data.getMaxCheckingTimes() > 0) {
+				if(!checkPendingMsgMap_IpChecks.containsKey(remoteHost)) {
+					checkPendingMsgMap_IpChecks.put(remoteHost, 0);
+				}
+				/** ScheduledExecutorService installation... */
+				final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+				scheduler.scheduleAtFixedRate(new Runnable() {
+					@Override
+					public void run() {
+						if(ackMap_IpAcks.containsKey(remoteHost)) {
+							Set<String> acksToBeReceived = ackMap_IpAcks.get(remoteHost);
+							if(acksToBeReceived.size() > 0) {
+								Integer checkingTimes = checkPendingMsgMap_IpChecks.get(remoteHost);
+								checkingTimes++;
+								logger.warn("[PENDING MESSAGES - " + remoteHost +"] ACKs Set size: " + acksToBeReceived.size() + ", Checking times: " + checkingTimes);
+								if(checkingTimes >= data.getMaxCheckingTimes()) {
+									logger.warn("[DISCONNECTION] " + remoteHost + " seems to be disconnected... Deleting from maps!");
+									String idToDisconnect = usersMap_IpId.get(remoteHost);
+									String userToDisconnect = usersMap_IdUsername.get(idToDisconnect);
+									ChannelGroup channelsToDisconnect = channelsMap_IpChannelGroup.get(remoteHost);
+									deleteData(remoteHost, idToDisconnect, userToDisconnect, channelsToDisconnect);
+									scheduler.shutdown();
+								} else {
+									checkPendingMsgMap_IpChecks.put(remoteHost, checkingTimes);
+								}
+							}
+						}
+					}
+				}, Constants.INTERVAL_SECONDS_PENDING_MESSAGES_CHECKING, Constants.INTERVAL_SECONDS_PENDING_MESSAGES_CHECKING, TimeUnit.SECONDS);
+			}
 		}
 		
 		broadcastUsersList(channel);
 		
 		/** Check if any survey mode is already running. If yes, warn the just connected user. */
 		if(data.getMode().equals(Constants.SURVEY1_MODE)) {
-			//TODO
+			BufferedReader br = null;
+			try {
+				br = new BufferedReader(new FileReader(Constants.PATH_SURVEY_FILE));
+				List<String> questionsList = new LinkedList<String>();
+				String currentLine;
+				while((currentLine = br.readLine()) != null) {
+					questionsList.add(currentLine);
+				}
+				Questions questions = new Questions();
+				questions.setQuestionsList(questionsList);
+				QuestionsResponse questionsResponse = new QuestionsResponse();
+				questionsResponse.setResponse(Constants.START_SURVEY_1);
+				questionsResponse.setData(questions);
+				channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(questionsResponse)));
+			} catch (FileNotFoundException e) {
+				logger.error(e.getMessage(), e);
+			} catch (IOException e) {
+				logger.error(e.getMessage(), e);
+			} finally {
+				try {
+					if (br != null) br.close();
+				} catch (IOException e) {
+					logger.error(e.getMessage(), e);
+				}
+			}
 		} else
 		if(data.getMode().equals(Constants.SURVEY2_MODE)) {
-			//TODO
+			BufferedReader br = null;
+			try {
+				br = new BufferedReader(new FileReader(Constants.PATH_SURVEY_FILE));
+				List<String> questionsList = new LinkedList<String>();
+				String currentLine;
+				while((currentLine = br.readLine()) != null) {
+					questionsList.add(currentLine);
+				}
+				Questions questions = new Questions();
+				questions.setQuestionsList(questionsList);
+				QuestionsResponse questionsResponse = new QuestionsResponse();
+				questionsResponse.setResponse(Constants.START_SURVEY_2);
+				questionsResponse.setData(questions);
+				channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(questionsResponse)));
+			} catch (FileNotFoundException e) {
+				logger.error(e.getMessage(), e);
+			} catch (IOException e) {
+				logger.error(e.getMessage(), e);
+			} finally {
+				try {
+					if (br != null) br.close();
+				} catch (IOException e) {
+					logger.error(e.getMessage(), e);
+				}
+			}
 		}
 	}
 	
@@ -522,27 +649,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 					String userToDisconnect = usersMap_IdUsername.get(idToDisconnect);
 					String ipToDisconnect = usersMap_IdIp.get(idToDisconnect);
 					ChannelGroup channelsToDisconnect = channelsMap_IpChannelGroup.get(ipToDisconnect);
-					usernamesSet.remove(userToDisconnect);
-					usersMap_IdUsername.remove(idToDisconnect);
-					usersMap_IdIp.remove(idToDisconnect);
-					usersMap_IpId.remove(ipToDisconnect);
-					
-					channelsMap_IpChannelGroup.remove(ipToDisconnect);
-					for(Channel channel : channelsToDisconnect) {
-						broadcastChannelGroup.disconnect(ChannelMatchers.is(channel));
-						broadcastChannelGroup.remove(channel);
-					}
-					
-					logger.debug("Number of channels in the broadcast group: " + broadcastChannelGroup.size());
-					
-					/** Broadcast deleting user... */
-					MultiUsersResponse userDel = new MultiUsersResponse();
-					List<User> userList = new LinkedList<User>();
-					userList.add(new User().setId(idToDisconnect).setUsername(userToDisconnect));
-					userDel.setResponse(Constants.USERS_REM);
-					userDel.setData(userList);
-					broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(gson.toJson(userDel)));
-					
+					deleteData(ipToDisconnect, idToDisconnect, userToDisconnect, channelsToDisconnect);
 				} else {
 					logger.warn("Non-existing user ID!");
 				}
@@ -585,7 +692,6 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		String userIdFrom = userFrom.getId();
 		User userTo = userFrom.getMsg().getReceiver();
 		String userIdTo = userTo.getId();
-		String userNickTo = userTo.getUsername();
 		String msgBody = userFrom.getMsg().getBody();
 		
 		/** Req message must be forwarded to other opened channels of sender */
@@ -597,60 +703,11 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		}
 		
 		long currentTimestamp = System.currentTimeMillis() / 1000L;
-		msgCounter = data.getMsgCounter();
-		data.setMsgCounter(msgCounter + 1);
-		String seqHex = "0x" + String.format("%08x", msgCounter & 0xFFFFFFFF);
-		String interaction = "C t=" + currentTimestamp + " ip=0x00000000" + " id=" + userIdFrom + " boot_count=0" + " seq=" + seqHex + "[" + userIdTo + "(0)" + " #1]";
-		LogInteraction.logInteraction(interaction);
-		
-		String message = "(" + currentTimestamp + ") " + "[" + userIdFrom + "," + userIdTo + "] " + "{" + msgBody + "}";
-		LogMessage.logMsg(message);
+		data.incrementMsgCounter();
+		String seqHex = "0x" + String.format("%08x", data.getMsgCounter() & 0xFFFFFFFF);
 		
 		String receiverIp = usersMap_IdIp.get(userIdTo);
 		ChannelGroup channelsReceiver = channelsMap_IpChannelGroup.get(receiverIp);
-		
-		
-		/** Receiver is disconnected */
-		try {
-			InetAddress inetReceiverIp = InetAddress.getByName(receiverIp);
-			Integer connectionTimeout = Integer.parseInt(ServerConfManager.getInstance().getProperty(Constants.COMMUNICATION_TIMEOUT));
-			if(!inetReceiverIp.isReachable(connectionTimeout)) {
-				logger.warn("Receiver is disconnected... Deleting from maps.");
-				usersMap_IpId.remove(receiverIp);
-				usersMap_IdIp.remove(userIdTo);
-				channelsMap_IpChannelGroup.remove(receiverIp);
-				usersMap_IdUsername.remove(userIdTo);
-				usernamesSet.remove(userNickTo);
-				
-				LogConnection.logConnection("[DISCONNECTION]\t(" + receiverIp + ", " + userIdTo + ", " + userNickTo + ") disconnected. #Channels: 0");
-				
-				SingleUserResponse userResp = new SingleUserResponse();
-				userResp.setResponse(Constants.FAIL_DELIVERING);
-				userResp.setData(userFrom);
-				channelsSender.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)));
-				
-				/** Broadcast deleting user... */
-				MultiUsersResponse userDel = new MultiUsersResponse();
-				List<User> userList = new LinkedList<User>();
-				userList.add(new User().setId(userIdTo).setUsername(userNickTo));
-				userDel.setResponse(Constants.USERS_REM);
-				userDel.setData(userList);
-				broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(gson.toJson(userDel)));
-				
-				return;
-				
-			} else {
-				logger.debug("Client " + receiverIp + " is still alive.");
-			}
-		} catch (UnknownHostException e) {
-			logger.error(e.getMessage(), e);
-			return;
-			
-		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
-			return;
-		}
-		
 		
 		/** Receiver close the chat's window while forwarding a message to him */
 		if(channelsReceiver.size() == 0) {
@@ -659,29 +716,80 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			userResp.setResponse(Constants.FAIL_DELIVERING);
 			userResp.setData(userFrom);
 			channelsSender.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)));
+			
+			broadcastDisconnections(receiverIp);
 			return;
 		}
+		
+		/** Adding the sequence number inside the message: this is required by the ACKs mechanism */
+		userFrom.getMsg().setSeqHex(seqHex);
 		
 		/** Delivering... */
 		SingleUserResponse userResp = new SingleUserResponse();
 		userResp.setResponse(Constants.DELIVER_MSG);
 		userResp.setData(userFrom);
 		channelsReceiver.writeAndFlush(new TextWebSocketFrame(gson.toJson(userResp)));
+		
+		/** ACK mechanism (only if the checkingtimes.pendingmessages property is greater than 0) */
+		if(data.getMaxCheckingTimes() > 0) {
+			if(!ackMap_IpAcks.containsKey(receiverIp)) {
+				Set<String> acksToBeReceived = new HashSet<String>();
+				acksToBeReceived.add(seqHex);
+				ackMap_IpAcks.put(receiverIp, acksToBeReceived);
+			} else {
+				Set<String> acksToBeReceived = ackMap_IpAcks.get(receiverIp);
+				acksToBeReceived.add(seqHex);
+			}
+			
+			logger.debug("#Msg with no ACKS for " + receiverIp + ": " + ackMap_IpAcks.get(receiverIp).size());
+		}
+		
+		/** Logging */
+		String interaction = "C t=" + currentTimestamp + " ip=0x00000000" + " id=" + userIdFrom + " boot_count=0" + " seq=" + seqHex + "[" + userIdTo + "(0)" + " #1]";
+		LogInteraction.logInteraction(interaction);
+		String message = "(" + currentTimestamp + ") " + "[" + userIdFrom + "," + userIdTo + "] " + "{" + msgBody + "}";
+		LogMessage.logMsg(message);
 	}
 	
-	private void manageDisconnections(Channel channel) {
-		String remoteHost = getRemoteHost(channel);
+	private void deleteData(String ip, String id, String username, ChannelGroup channels) {
+		usernamesSet.remove(username);
+		usersMap_IdUsername.remove(id);
+		usersMap_IdIp.remove(id);
+		usersMap_IpId.remove(ip);
+		checkPendingMsgMap_IpChecks.remove(ip);
+		ackMap_IpAcks.remove(ip);
+		
+		for(Channel channel : channels) {
+			broadcastChannelGroup.disconnect(ChannelMatchers.is(channel));
+			broadcastChannelGroup.remove(channel);
+			channel.disconnect();
+		}
+		
+		channelsMap_IpChannelGroup.remove(ip);
+		
+		LogConnection.logConnection("[DISCONNECTION]\t(" + ip + ", " + id + ", " + username + ") disconnected. #Channels: 0");
+		logger.debug("Number of channels in the broadcast group: " + broadcastChannelGroup.size());
+		
+		/** Broadcast deleting user... */
+		MultiUsersResponse userDel = new MultiUsersResponse();
+		List<User> userList = new LinkedList<User>();
+		userList.add(new User().setId(id).setUsername(username));
+		userDel.setResponse(Constants.USERS_REM);
+		userDel.setData(userList);
+		broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(gson.toJson(userDel)));
+	}
+	
+	private void broadcastDisconnections(String remoteHost) {
 		if(usersMap_IpId.containsKey(remoteHost) && channelsMap_IpChannelGroup.containsKey(remoteHost)) {
 			String id = usersMap_IpId.get(remoteHost);
 			String username = usersMap_IdUsername.get(id);
 			
 			/** If all user's connections are closed then send an update message to delete user from the list */
 			if(channelsMap_IpChannelGroup.get(remoteHost).size() == 0) {
-				
 				LogConnection.logConnection("[DISCONNECTION]\t(" + remoteHost + ", " + id + ", " + username + ") disconnected. #Channels: 0");
 				
 				/** Update the users' list deleting the disconnected user */
-				broadcastUserStatus(id, username, channel, Constants.USERS_REM);
+				broadcastUserStatus(id, username, null, Constants.USERS_REM);
 			}
 		}
 	}

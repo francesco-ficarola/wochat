@@ -11,6 +11,21 @@ body {
 	background-color: #f8f8f8;
 }
 
+a.bodylink:link {
+	color: #3d8bff;
+	text-decoration: none;
+}
+
+a.bodylink:hover {
+	color: #3d8bff;
+	text-decoration:underline
+}
+
+a.bodylink:visited {
+	color: #3d8bff;
+	text-decoration: none;
+}
+
 #div-chat-box {
 	position: relative;
 	margin: 0;

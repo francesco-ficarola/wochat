@@ -12,24 +12,31 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class DataOnTheFly {
 	private Map<String, String> usersMap_IpId;
 	private Map<String, String> usersMap_IdIp;
+	private Map<String, Set<String>> ackMap_IpAcks;
+	private Map<String, Integer> checkPendingMsgMap_IpChecks;
 	private Set<String> usernamesSet;
 	private Map<String, String> usersMap_IdUsername;
 	private Map<String, ChannelGroup> channelsMap_IpChannelGroup;
 	private ChannelGroup broadcastChannelGroup;
-	private long msgCounter;
+	private AtomicLong msgCounter;
 	private int userCounter;
 	private String mode;
 	private String usernameAdmin;
+	private Integer maxCheckingTimes;
 	
 	public DataOnTheFly() {
 		/** Hashtable is synchronized: just one invocation at time */
 		usersMap_IpId = new Hashtable<String, String>();
 		usersMap_IdIp = new Hashtable<String, String>();
+		ackMap_IpAcks = new Hashtable<String, Set<String>>();
+		checkPendingMsgMap_IpChecks = new Hashtable<String, Integer>();
 		usersMap_IdUsername = new Hashtable<String, String>();
+		
 		
 		/** This set is synchronized: just one invocation at time */
 		usernamesSet = Collections.synchronizedSet(new HashSet<String>());
@@ -40,10 +47,11 @@ public class DataOnTheFly {
 		/** Set */
 		broadcastChannelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 		
-		msgCounter = 0;
+		msgCounter = new AtomicLong(0);
 		userCounter = 0;
 		mode = Constants.CHAT_MODE;
 		usernameAdmin = ServerConfManager.getInstance().getProperty(Constants.ADMIN_USERNAME);
+		maxCheckingTimes = Integer.parseInt(ServerConfManager.getInstance().getProperty(Constants.MAX_CHECKING_TIMES));
 	}
 
 	public Map<String, String> get_usersMap_IpId() {
@@ -62,6 +70,14 @@ public class DataOnTheFly {
 		return usersMap_IdUsername;
 	}
 
+	public Map<String, Set<String>> get_ackMap_IpAcks() {
+		return ackMap_IpAcks;
+	}
+
+	public Map<String, Integer> get_checkPendingMsgMap_IpChecks() {
+		return checkPendingMsgMap_IpChecks;
+	}
+
 	public Map<String, ChannelGroup> get_channelsMap_IpChannelGroup() {
 		return channelsMap_IpChannelGroup;
 	}
@@ -71,11 +87,11 @@ public class DataOnTheFly {
 	}
 
 	public long getMsgCounter() {
-		return msgCounter;
+		return msgCounter.get();
 	}
 
-	public void setMsgCounter(long msgCounter) {
-		this.msgCounter = msgCounter;
+	public void incrementMsgCounter() {
+		msgCounter.incrementAndGet();
 	}
 
 	public synchronized int getUserCounter() {
@@ -96,5 +112,9 @@ public class DataOnTheFly {
 
 	public String getUsernameAdmin() {
 		return usernameAdmin;
+	}
+
+	public Integer getMaxCheckingTimes() {
+		return maxCheckingTimes;
 	}
 }
