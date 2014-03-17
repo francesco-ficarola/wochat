@@ -24,8 +24,6 @@ public class Constants {
 	public static final String ADMIN_DELIVER_MSG = "admin_deliver_msg";
 	public static final String FAIL_DELIVERING = "fail_delivering";
 	public static final String FORWARD_TO_OTHER_CHANNELS = "forward_to_other_channels";
-	public static final String HTTP_ADMIN_SUCCESS_CONN = "admin_success_conn";
-	public static final String ADMIN_READY = "admin_ready";
 	public static final String ACK_MSG = "ack";
 	
 	public static final String USER_KILL_ME_CMD = "/killme now";
@@ -33,6 +31,7 @@ public class Constants {
 	public static final String ADMIN_CMD_START = "/start";
 	public static final String ADMIN_CMD_KILL = "/kill";
 	public static final String ADMIN_CMD_MSG = "/msg";
+	public static final String ADMIN_CMD_USERS = "/users";
 	
 	public static final String PATH_SURVEY_FILE = "conf/woc.survey";
 	public static final String START_SURVEY_1 = "start_survey_1";
@@ -40,8 +39,11 @@ public class Constants {
 	public static final String ANSWERS_SURVEY1 = "answers_survey1";
 	public static final String ANSWERS_SURVEY2 = "answers_survey2";
 	public static final String START_CHAT = "start_chat";
-	
-	public static final String USER_KICKED = "user_kicked";
+
+	public static final String HTTP_ADMIN_SUCCESS_CONN = "admin_success_conn";
+	public static final String HTTP_ADMIN_FAIL_CONN = "admin_fail_conn";
+	public static final String ADMIN_READY = "admin_ready";
+	public static final String SYSTEM_NOTIFICATION = "system_notification";
 	public static final String CHAT_MODE = "chat_mode";
 	public static final String SURVEY1_MODE = "survey1_mode";
 	public static final String SURVEY2_MODE = "survey2_mode";

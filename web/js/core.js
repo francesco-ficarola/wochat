@@ -13,14 +13,15 @@ var FAIL_DELIVERING = 'fail_delivering';
 var FORWARD_TO_OTHER_CHANNELS = 'forward_to_other_channels';
 var ACK_MSG = 'ack';
 var HTTP_ADMIN_SUCCESS_CONN = 'admin_success_conn';
+var HTTP_ADMIN_FAIL_CONN = 'admin_fail_conn';
 var ADMIN_READY = 'admin_ready';
+var SYSTEM_NOTIFICATION = 'system_notification';
 var ADMIN_ID = '0000';
 var START_SURVEY_1 = 'start_survey_1';
 var START_SURVEY_2 = 'start_survey_2';
 var START_CHAT = 'start_chat';
 var ANSWERS_SURVEY1 = 'answers_survey1';
 var ANSWERS_SURVEY2 = 'answers_survey2';
-var USER_KICKED = 'user_kicked';
 var CHAT_MODE = 'chat_mode';
 var SURVEY1_MODE = 'survey1_mode';
 var SURVEY2_MODE = 'survey2_mode';
@@ -190,7 +191,10 @@ $(document).ready(function() {
 				console.log(message);
 				sendMessage(message);
 				
-				var completed_msg = 'Thank you. Please wait for other participants...';
+				var completed_msg = '<p>Thank you. Please wait for other participants...</p>' + 
+							'<iframe id="tetris-iframe" src="tetris/tetris.html" frameborder="0" border="0" cellspacing="0"></iframe>';
+				$('.div-survey-container').css('text-align', 'center');
+				$('.div-survey-container').css('width', '40%');
 				$('.div-survey-container').html(completed_msg);
 			}
 		});
@@ -216,7 +220,10 @@ $(document).ready(function() {
 				console.log(message);
 				sendMessage(message);
 				
-				var completed_msg = 'Thank you. Please wait for other participants...';
+				var completed_msg = '<p>Thank you. Please wait for other participants...</p>' + 
+							'<iframe id="tetris-iframe" src="tetris/tetris.html" frameborder="0" border="0" cellspacing="0"></iframe>';
+				$('.div-survey-container').css('text-align', 'center');
+				$('.div-survey-container').css('width', '40%');
 				$('.div-survey-container').html(completed_msg);
 			}
 		});
@@ -460,7 +467,7 @@ function onMessageReceived(e) {
 			// Response received whenever the admin is authorized to join chat
 			if(jsonMsg.response === ADMIN_READY) {
 				id = ADMIN_ID;
-				var chat_title = 'Broadcasting to all users...';
+				var chat_title = 'Admin Console';
 				$('#p-chat-title').hide().html(chat_title).fadeIn('slow');
 				
 				recipient_id = ADMIN_ID;
@@ -473,9 +480,8 @@ function onMessageReceived(e) {
 			
 			else
 			
-			if(jsonMsg.response === USER_KICKED) {
-				var userKicked = jsonMsg.data.username;
-				var msg_body = userKicked + ' was kicked.';
+			if(jsonMsg.response === SYSTEM_NOTIFICATION) {
+				var msg_body = jsonMsg.data.msg.body;
 				var $recipient_div = $('#div-' + recipient_id);
 				var msg_struct = '\
 						<div class="div-chat-user-msg">\
@@ -533,7 +539,7 @@ function onMessageReceived(e) {
 			
 			else
 			
-			// Messages from admin
+			// Messages from admin to everyone
 			if(jsonMsg.response === ADMIN_MSG) {
 				var msg_body = jsonMsg.data.msg.body;
 				if(recipient_id === undefined || recipient_id === null) {
@@ -574,7 +580,7 @@ function onMessageReceived(e) {
 							<div class="div-survey-container">\
 								' + survey_form + '\
 							</div>';
-
+				
 				$('.div-survey').html(survey_div_container);
 				$('.div-survey').css('display', 'block');
 			}
@@ -669,6 +675,9 @@ function registrationFormListener(event) {
 					// admin_success_conn: admin connection
 					if(jsonMsg.response === HTTP_ADMIN_SUCCESS_CONN) {
 						loggedin(jsonMsg.data.username);
+					} else
+					if(jsonMsg.response === HTTP_ADMIN_FAIL_CONN) {
+						$('#div-username-warning').text('Admin already connected!').show().fadeOut(5000);
 					}
 				} else {
 					console.error('The JSON object does not contain the response property');

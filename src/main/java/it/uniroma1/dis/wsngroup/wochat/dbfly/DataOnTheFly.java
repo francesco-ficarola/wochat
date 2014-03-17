@@ -1,5 +1,6 @@
 package it.uniroma1.dis.wsngroup.wochat.dbfly;
 
+import io.netty.channel.Channel;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.GlobalEventExecutor;
@@ -26,6 +27,7 @@ public class DataOnTheFly {
 	private AtomicLong msgCounter;
 	private int userCounter;
 	private String mode;
+	private Channel adminChannel;
 	private String usernameAdmin;
 	private Integer communicationTimeout;
 	private Integer maxCheckingTimes;
@@ -52,6 +54,7 @@ public class DataOnTheFly {
 		msgCounter = new AtomicLong(0);
 		userCounter = 0;
 		mode = Constants.CHAT_MODE;
+		adminChannel = null;
 		usernameAdmin = ServerConfManager.getInstance().getProperty(Constants.ADMIN_USERNAME);
 		communicationTimeout = Integer.parseInt(ServerConfManager.getInstance().getProperty(Constants.COMMUNICATION_TIMEOUT));
 		maxCheckingTimes = Integer.parseInt(ServerConfManager.getInstance().getProperty(Constants.MAX_CHECKING_TIMES));
@@ -108,6 +111,14 @@ public class DataOnTheFly {
 
 	public String getMode() {
 		return mode;
+	}
+
+	public Channel getAdminChannel() {
+		return adminChannel;
+	}
+
+	public void setAdminChannel(Channel adminChannel) {
+		this.adminChannel = adminChannel;
 	}
 
 	public void setMode(String mode) {

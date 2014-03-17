@@ -40,7 +40,7 @@ Configuration
 You can find all parameters that can be changed in **conf/wochat.properties**:
 
 * ```server.port``` : the WoChat's service port
-* ```admin.username``` : admin's username
+* ```admin.username``` : admin's username (*admin* by default)
 * ```checkingtimes.pendingmessages``` : number of times of checking pending messages before disconnecting a user (set to 0 if you want to disable the acknowledgment mechanism)
 * ```communication.timeout``` : time interval of checking pending messages (it works if ```checkingtimes.pendingmessages``` is greater than 0)
 * ```killme.now``` : allows users to kill and disconnect themselves.
@@ -50,9 +50,11 @@ Admin commands
 
 If you log into WoChat as Administrator, you can execute the following commands:
 
+```/users count``` : asks for the number of connected users
+
 ```/msg <your_message>``` : sends everyone admin's message
 
-```/disconnect <id_user>``` : forces a user's disconnection
+```/disconnect <id_user>``` : forces user's disconnection
 
 ```/start survey1``` : starts the survey mode (round 1)
 

@@ -141,6 +141,17 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		}
 		
 		/** Website content */
+		if(req.getUri().matches(".*\\.html$")) {
+			ByteBuf content = Unpooled.copiedBuffer(Functions.readFile("./web/" + req.getUri(), CharsetUtil.UTF_8), CharsetUtil.UTF_8);
+			FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
+			
+			res.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8");
+			setContentLength(res, content.readableBytes());
+
+			sendHttpResponse(ctx, req, res);
+			return;
+		}
+		
 		if(req.getUri().matches(".*\\.(css|js|map)$")) {
 			ByteBuf content = Unpooled.copiedBuffer(Functions.readFile("./web/" + req.getUri(), CharsetUtil.UTF_8), CharsetUtil.UTF_8);
 			FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
@@ -158,7 +169,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			return;
 		}
 		
-		if(req.getUri().matches(".*\\.(png|jpg)$")) {
+		if(req.getUri().matches(".*\\.(png|jpg|gif)$")) {
 			/** Image loading... */
 			BufferedImage originalImage = ImageIO.read(new File("./web/" + req.getUri()));
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -167,6 +178,9 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			} else
 			if(req.getUri().matches(".*\\.jpg$")) {
 				ImageIO.write( originalImage, "jpg", baos );
+			} else
+			if(req.getUri().matches(".*\\.gif$")) {
+					ImageIO.write( originalImage, "gif", baos );
 			}
 			baos.flush();
 			byte[] imageInByte = baos.toByteArray();
@@ -180,6 +194,9 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			} else
 			if(req.getUri().matches(".*\\.jpg$")) {
 				res.headers().set(CONTENT_TYPE, "image/jpeg");
+			} else
+			if(req.getUri().matches(".*\\.gif$")) {
+				res.headers().set(CONTENT_TYPE, "image/gif");
 			} 
 			
 			setContentLength(res, content.readableBytes());
@@ -227,8 +244,16 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 					
 					/** Admin connection */
 					if(username.equals(data.getUsernameAdmin())) {
-						responseJson.setResponse(Constants.HTTP_ADMIN_SUCCESS_CONN);
-						responseJson.setData(new User().setUsername(username));
+						if(data.getAdminChannel() == null) {
+							responseJson.setResponse(Constants.HTTP_ADMIN_SUCCESS_CONN);
+							responseJson.setData(new User().setUsername(username));
+						} else 
+						if(!data.getAdminChannel().isActive()) {
+							responseJson.setResponse(Constants.HTTP_ADMIN_SUCCESS_CONN);
+							responseJson.setData(new User().setUsername(username));
+						} else {
+							responseJson.setResponse(Constants.HTTP_ADMIN_FAIL_CONN);
+						}
 					}
 					
 					else
@@ -358,6 +383,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			
 			/** Manage admin */
 			if(user.getUsername().equals(data.getUsernameAdmin())) {
+				data.setAdminChannel(channel);
 				manageAdmin(channel);
 			}
 			
@@ -480,6 +506,10 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		/** Send all connected users to the admin */
 		broadcastUsersList(channel);
+		
+		/** Send the number of connected users */
+		String systemMsgBody = "Connected users: " + usersMap_IdUsername.size();
+		sendSystemNotification(systemMsgBody);
 	}
 	
 	private void manageUsers(Channel channel, String username) {
@@ -651,12 +681,8 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 					String ipToDisconnect = usersMap_IdIp.get(idToDisconnect);
 					ChannelGroup channelsToDisconnect = channelsMap_IpChannelGroup.get(ipToDisconnect);
 					deleteData(ipToDisconnect, idToDisconnect, userToDisconnect, channelsToDisconnect);
-					SingleUserResponse adminResp = new SingleUserResponse();
-					adminResp.setResponse(Constants.USER_KICKED);
-					User userKicked = new User();
-					userKicked.setUsername(userToDisconnect);
-					adminResp.setData(userKicked);
-					adminChannel.writeAndFlush(new TextWebSocketFrame(gson.toJson(adminResp)));
+					String systemMsgBody = userToDisconnect + " was kicked out!";
+					sendSystemNotification(systemMsgBody);
 				} else {
 					logger.warn("Non-existing user ID!");
 				}
@@ -706,6 +732,16 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 				msgToBroadcast.setBody(msgString);
 				allUsers.setMsg(msgToBroadcast);
 				broadcastRespToEveryone(Constants.ADMIN_MSG, allUsers, adminChannel);
+			}
+			
+			else
+			
+			/** users command: request for the number of connected users */
+			if(command.equals(Constants.ADMIN_CMD_USERS)) {
+				if(splitter[1].equals("count")) {
+					String systemMsgBody = "Connected users: " + usersMap_IdUsername.size();
+					sendSystemNotification(systemMsgBody);
+				}
 			}
 			
 			else
@@ -898,6 +934,25 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			} catch (IOException e) {
 				logger.error(e.getMessage(), e);
 			}
+		}
+	}
+	
+	private void sendSystemNotification(String systemMsgBody) {
+		if(data.getAdminChannel() != null) {
+			if(data.getAdminChannel().isActive()) {
+				SingleUserResponse systemResp = new SingleUserResponse();
+				systemResp.setResponse(Constants.SYSTEM_NOTIFICATION);
+				User systemData = new User();
+				Message systemMsg = new Message();
+				systemMsg.setBody(systemMsgBody);
+				systemData.setMsg(systemMsg);
+				systemResp.setData(systemData);
+				data.getAdminChannel().writeAndFlush(new TextWebSocketFrame(gson.toJson(systemResp)));
+			} else {
+				logger.warn("Admin channel is no longer active. Discarding notification...");
+			}
+		} else {
+			logger.debug("No admin connected. Discarding notification...");
 		}
 	}
 	
