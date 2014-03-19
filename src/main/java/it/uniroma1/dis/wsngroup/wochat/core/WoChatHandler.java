@@ -728,7 +728,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 						sendSystemNotification(systemMsgBody);
 						logger.warn(systemMsgBody);
 					} else {
-						systemMsgBody = "Active users: " + usersActive;
+						systemMsgBody = "Active users: " + usersActive + ", Set: " + data.get_usersIdActive().toString();
 						sendSystemNotification(systemMsgBody);
 					}
 					/** Resetting active users set to always have an up-to-date set */
@@ -738,7 +738,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 					if(data.get_usersIdActive().size() > 0) {
 						Set<String> surveyingUsers = new HashSet<String>(data.get_usersIdActive());
 						surveyingUsers.removeAll(data.get_usersIdCompletedSurvey());
-						String systemMsgBody = "Users still surveying: " + surveyingUsers.toString();
+						String systemMsgBody = "Users still surveying: " + surveyingUsers.size() + ", Set: " + surveyingUsers.toString();
 						sendSystemNotification(systemMsgBody);
 						/** Resetting active users set to always have an up-to-date set */
 						data.get_usersIdActive().clear();
