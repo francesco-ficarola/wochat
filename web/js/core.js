@@ -26,6 +26,8 @@ var CHAT_MODE = 'chat_mode';
 var SURVEY1_MODE = 'survey1_mode';
 var SURVEY2_MODE = 'survey2_mode';
 var ADMIN_MSG = 'admin_msg';
+var PING = 'ping';
+var PONG = 'pong';
 
 var p_users_list_DEFAULT_BACKGROUND = '#dff6ff';
 var p_users_list_HOVER_BACKGROUND = '#beedff';
@@ -556,6 +558,14 @@ function onMessageReceived(e) {
 						</div>';
 				$recipient_div.append(msg_struct);
 				$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
+			}
+			
+			else
+			
+			// Ping request from admin
+			if(jsonMsg.response === PING) {
+				var pongMsg = '{ "request": "' + PONG + '", "data": { "id" : "' + id + '" } }';
+				sendMessage(pongMsg);
 			}
 			
 			else

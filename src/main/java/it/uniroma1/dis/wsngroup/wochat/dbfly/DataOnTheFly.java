@@ -24,6 +24,8 @@ public class DataOnTheFly {
 	private Map<String, String> usersMap_IdUsername;
 	private Map<String, ChannelGroup> channelsMap_IpChannelGroup;
 	private ChannelGroup broadcastChannelGroup;
+	private Set<String> usersIdActive;
+	private Set<String> usersIdCompletedSurvey;
 	private AtomicLong msgCounter;
 	private int userCounter;
 	private String mode;
@@ -50,6 +52,8 @@ public class DataOnTheFly {
 		
 		/** Set */
 		broadcastChannelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+		usersIdActive = new HashSet<String>();
+		usersIdCompletedSurvey = new HashSet<String>();
 		
 		msgCounter = new AtomicLong(0);
 		userCounter = 0;
@@ -91,6 +95,14 @@ public class DataOnTheFly {
 
 	public ChannelGroup get_broadcastChannelGroup() {
 		return broadcastChannelGroup;
+	}
+
+	public Set<String> get_usersIdActive() {
+		return usersIdActive;
+	}
+
+	public Set<String> get_usersIdCompletedSurvey() {
+		return usersIdCompletedSurvey;
 	}
 
 	public long getMsgCounter() {

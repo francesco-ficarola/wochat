@@ -50,19 +50,15 @@ Admin commands
 
 If you log into WoChat as Administrator, you can execute the following commands:
 
-```/users count``` : asks for the number of connected users
-
-```/msg <your_message>``` : sends everyone admin's message
-
-```/disconnect <id_user>``` : forces user's disconnection
-
-```/start survey1``` : starts the survey mode (round 1)
-
-```/start survey2``` : starts the survey mode (round 2)
-
-```/start chat``` : starts the chat mode
-
-```/kill wochat``` : kills WoChat
+* ```/users count``` : asks for the total number of users (active and inactive)
+* ```/users ping``` : sends pinglike messages
+* ```/users active``` : replies with the total number of active users (a ```/users ping``` request must be performed before)
+* ```/msg <your_message>``` : sends everyone admin's message
+* ```/disconnect <id_user>``` : forces user's disconnection
+* ```/start survey1``` : starts the survey mode (round 1)
+* ```/start survey2``` : starts the survey mode (round 2)
+* ```/start chat``` : starts the chat mode
+* ```/kill wochat``` : kills WoChat
 
 User commands
 -------------

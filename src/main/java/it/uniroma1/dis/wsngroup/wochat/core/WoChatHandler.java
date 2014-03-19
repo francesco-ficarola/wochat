@@ -445,6 +445,9 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			LogAnswers1.logAnswer(line);
 			
 			//TODO: check if all participants have replied; if yes automatically enable chat
+			data.get_usersIdCompletedSurvey().add(id);
+			Integer uncompletedSurveys = usersMap_IdUsername.size() - data.get_usersIdCompletedSurvey().size();
+			
 		}
 		
 		else
@@ -463,6 +466,15 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			LogAnswers2.logAnswer(line);
 			
 			//TODO: check if all participants have replied; if yes automatically enable chat
+		}
+		
+		else
+			
+		if(userReq.getRequest().equals(Constants.PONG)) {
+			String idPong = userReq.getData().getId();
+			String usernamePong = usersMap_IdUsername.get(idPong);
+			data.get_usersIdActive().add(idPong);
+			logger.debug("Pong response from " + idPong + "(" + usernamePong + ")");
 		}
 	}
 
@@ -610,6 +622,9 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		broadcastUsersList(channel);
 		
+		String systemMsgBody = username + " [" + id + "] connected";
+		sendSystemNotification(systemMsgBody);
+		
 		/** Check if any survey mode is already running. If yes, warn the just connected user. */
 		if(data.getMode().equals(Constants.SURVEY1_MODE)) {
 			BufferedReader br = null;
@@ -681,8 +696,6 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 					String ipToDisconnect = usersMap_IdIp.get(idToDisconnect);
 					ChannelGroup channelsToDisconnect = channelsMap_IpChannelGroup.get(ipToDisconnect);
 					deleteData(ipToDisconnect, idToDisconnect, userToDisconnect, channelsToDisconnect);
-					String systemMsgBody = userToDisconnect + " was kicked out!";
-					sendSystemNotification(systemMsgBody);
 				} else {
 					logger.warn("Non-existing user ID!");
 				}
@@ -699,6 +712,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 					adminResp.setResponse(Constants.SURVEY1_MODE);
 					adminChannel.writeAndFlush(new TextWebSocketFrame(gson.toJson(adminResp)));
 					broadcastSurvey(adminChannel, Constants.START_SURVEY_1);
+					data.get_usersIdCompletedSurvey().clear();
 				} else
 				if(parameter.equals("survey2")) {
 					data.setMode(Constants.SURVEY2_MODE);
@@ -706,6 +720,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 					adminResp.setResponse(Constants.SURVEY2_MODE);
 					adminChannel.writeAndFlush(new TextWebSocketFrame(gson.toJson(adminResp)));
 					broadcastSurvey(adminChannel, Constants.START_SURVEY_2);
+					data.get_usersIdCompletedSurvey().clear();
 				} else
 				if(parameter.equals("chat")) {
 					data.setMode(Constants.CHAT_MODE);
@@ -740,6 +755,32 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			if(command.equals(Constants.ADMIN_CMD_USERS)) {
 				if(splitter[1].equals("count")) {
 					String systemMsgBody = "Connected users: " + usersMap_IdUsername.size();
+					sendSystemNotification(systemMsgBody);
+				} else
+				if(data.getMode().equals(Constants.CHAT_MODE)) {
+					if(splitter[1].equals("ping")) {
+						data.get_usersIdActive().clear();
+						broadcastRespToEveryone(Constants.PING, null, adminChannel);
+						String systemMsgBody = "Sending PING requests...";
+						sendSystemNotification(systemMsgBody);
+					} else
+					if(splitter[1].equals("active")) {
+						Integer usersActive = data.get_usersIdActive().size();
+						String systemMsgBody = "";
+						if(usersActive == 0) {
+							systemMsgBody = "No active users... Have performed a PING request?";
+							sendSystemNotification(systemMsgBody);
+							logger.warn("No active users... Have you performed a PING request?");
+						} else {
+							systemMsgBody = "Active users: " + usersActive;
+							sendSystemNotification(systemMsgBody);
+						}
+						/** Resetting active users set to always have an up-to-date set */
+						data.get_usersIdActive().clear();
+					}
+				} else {
+					logger.warn("Ping and active requests are dangerous if executed in survey mode: they delete the active users set!");
+					String systemMsgBody = "Cannot perform this action in the current mode, but only in chat.";
 					sendSystemNotification(systemMsgBody);
 				}
 			}
@@ -857,6 +898,10 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		userDel.setResponse(Constants.USERS_REM);
 		userDel.setData(userList);
 		broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(gson.toJson(userDel)));
+		
+		/** System notification */
+		String systemMsgBody = username + " [" + id + "] disconnected";
+		sendSystemNotification(systemMsgBody);
 	}
 	
 	private void broadcastDisconnections(String remoteHost) {
@@ -870,6 +915,10 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 				
 				/** Update the users' list deleting the disconnected user */
 				broadcastUserStatus(id, username, null, Constants.USERS_REM);
+				
+				/** System notification */
+				String systemMsgBody = username + " [" + id + "] disconnected";
+				sendSystemNotification(systemMsgBody);
 			}
 		}
 	}
@@ -949,10 +998,10 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 				systemResp.setData(systemData);
 				data.getAdminChannel().writeAndFlush(new TextWebSocketFrame(gson.toJson(systemResp)));
 			} else {
-				logger.warn("Admin channel is no longer active. Discarding notification...");
+				logger.debug("Admin channel not active. Discarding notification...");
 			}
 		} else {
-			logger.debug("No admin connected. Discarding notification...");
+			logger.debug("Admin not connected. Discarding notification...");
 		}
 	}
 	

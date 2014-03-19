@@ -48,5 +48,7 @@ public class Constants {
 	public static final String SURVEY1_MODE = "survey1_mode";
 	public static final String SURVEY2_MODE = "survey2_mode";
 	public static final String ADMIN_MSG = "admin_msg";
+	public static final String PING = "ping";
+	public static final String PONG = "pong";
 	
 }
