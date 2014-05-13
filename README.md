@@ -56,7 +56,7 @@ If you log into WoChat as Administrator, you can execute the following commands:
 * ```/users surveying``` : sends a list of users still surveying (a ```/users ping``` request must be performed before)
 * ```/msg <your_message>``` : sends everyone admin's message
 * ```/disconnect <id_user>``` : forces user's disconnection
-* ```/start survey <number>``` : starts the survey mode
+* ```/start survey s<number> r<number>``` : starts the survey mode (number of survey and round)
 * ```/start chat``` : starts the chat mode
 * ```/kill wochat``` : kills WoChat
 
