@@ -17,14 +17,11 @@ var HTTP_ADMIN_FAIL_CONN = 'admin_fail_conn';
 var ADMIN_READY = 'admin_ready';
 var SYSTEM_NOTIFICATION = 'system_notification';
 var ADMIN_ID = '0000';
-var START_SURVEY_1 = 'start_survey_1';
-var START_SURVEY_2 = 'start_survey_2';
+var START_SURVEY = 'start_survey';
 var START_CHAT = 'start_chat';
-var ANSWERS_SURVEY1 = 'answers_survey1';
-var ANSWERS_SURVEY2 = 'answers_survey2';
+var ANSWERS_SURVEY = 'answers_survey';
 var CHAT_MODE = 'chat_mode';
-var SURVEY1_MODE = 'survey1_mode';
-var SURVEY2_MODE = 'survey2_mode';
+var SURVEY_MODE = 'survey_mode';
 var ADMIN_MSG = 'admin_msg';
 var PING = 'ping';
 var PONG = 'pong';
@@ -169,64 +166,6 @@ $(document).ready(function() {
 				var chat_title = 'Click on a user in the users\' list and start chatting!';
 				$('#p-chat-title').hide().html(chat_title).fadeIn('slow');
 				console.warn("recipient_id is undefined!");
-			}
-		});
-		
-		$(document).on('click', '#survey1-submit-button', function() {
-			var message = '{ "request": "' + ANSWERS_SURVEY1 + '", "data": { "id": "' + id + '", "username": "' + username + '", "answersSurvey1": ['; // will be complited in the following
-			var num_answers = $('.survey1-answers').length;
-			var readyToSend = true;
-			$('.survey1-answers').each(function(index) {
-				if(!$(this).val().match(/^\d+$/)) {
-					alert('Please answer all questions by entering only numeric characters!');
-					readyToSend = false;
-					return false;
-				}
-				message += $(this).val();
-				if(index < num_answers - 1) {
-				 	message += ', ';
-				}
-			});
-			message += '] } }';
-			
-			if(readyToSend) {
-				console.log(message);
-				sendMessage(message);
-				
-				var completed_msg = '<p>Thank you. Please wait for other participants...</p>' + 
-							'<iframe id="tetris-iframe" src="tetris/tetris.html" frameborder="0" border="0" cellspacing="0"></iframe>';
-				$('.div-survey-container').css('text-align', 'center');
-				$('.div-survey-container').css('width', '40%');
-				$('.div-survey-container').html(completed_msg);
-			}
-		});
-		
-		$(document).on('click', '#survey2-submit-button', function() {
-			var message = '{ "request": "' + ANSWERS_SURVEY2 + '", "data": { "id": "' + id + '", "username": "' + username + '", "answersSurvey2": ['; // will be complited in the following
-			var num_answers = $('.survey2-answers').length;
-			var readyToSend = true;
-			$('.survey2-answers').each(function(index) {
-				if(!$(this).val().match(/^\d+$/)) {
-					alert('Please answer all questions by entering only numeric characters!');
-					readyToSend = false;
-					return false;
-				}
-				message += $(this).val();
-				if(index < num_answers - 1) {
-				 	message += ', ';
-				}
-			});
-			message += '] } }';
-			
-			if(readyToSend) {
-				console.log(message);
-				sendMessage(message);
-				
-				var completed_msg = '<p>Thank you. Please wait for other participants...</p>' + 
-							'<iframe id="tetris-iframe" src="tetris/tetris.html" frameborder="0" border="0" cellspacing="0"></iframe>';
-				$('.div-survey-container').css('text-align', 'center');
-				$('.div-survey-container').css('width', '40%');
-				$('.div-survey-container').html(completed_msg);
 			}
 		});
 	}
@@ -511,24 +450,11 @@ function onMessageReceived(e) {
 			
 			else
 			
-			// Response received whenever admin executed the chat mode
-			if(jsonMsg.response === SURVEY1_MODE) {
-				var msg_body = 'Survey1 mode enabled.';
-				var $recipient_div = $('#div-' + recipient_id);
-				var msg_struct = '\
-						<div class="div-chat-user-msg">\
-							<div class="div-chat-username" style="background-color:red;">system message</div>\
-							<div class="div-chat-message">' + msg_body + '</div>\
-						</div>';
-				$recipient_div.append(msg_struct);
-				$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
-			}
-			
-			else
-			
-			// Response received whenever admin executed the chat mode
-			if(jsonMsg.response === SURVEY2_MODE) {
-				var msg_body = 'Survey2 mode enabled.';
+			// Response received whenever admin executed the survey mode
+			if(jsonMsg.response === SURVEY_MODE) {
+				var num_survey = jsonMsg.data.numSurvey;
+				var num_round = jsonMsg.data.numRound;
+				var msg_body = 'Survey ' + num_survey + ', round ' + num_round + ' enabled.';
 				var $recipient_div = $('#div-' + recipient_id);
 				var msg_struct = '\
 						<div class="div-chat-user-msg">\
@@ -570,20 +496,22 @@ function onMessageReceived(e) {
 			
 			else
 			
-			// Response received whenever the admin starts a survey pre-interaction
-			if(jsonMsg.response === START_SURVEY_1) {
+			// Response received whenever the admin starts a survey
+			if(jsonMsg.response === START_SURVEY) {
+				var num_survey = jsonMsg.data.numSurvey;
+				var num_round = jsonMsg.data.numRound;
 				var survey_form = '';
 				var jsonQuestions = jsonMsg.data.questionsList;
 				for(var i in jsonQuestions) {
 					var answersCnt = parseInt(i) + 1;
 					survey_form += '<p>' + 
 							jsonQuestions[i] + '<br />' +
-							'<input type="text" name="answer' + answersCnt + '" id="answer' + answersCnt + '" class="survey1-answers" maxlength="20" />' +
+							'<input type="text" name="answer' + answersCnt + '" id="answer' + answersCnt + '" class="survey-answers" maxlength="20" />' +
 							'</p>';
 				}
 				
 				survey_form += '<p>' +
-						'<input type="submit" name="survey1-submit-button" id="survey1-submit-button" value="Send" onfocus="this.blur();" />' +
+						'<input type="submit" name="survey-submit-button" id="survey-submit-button" value="Send" onfocus="this.blur();" />' +
 						'</p>';
 
 				var survey_div_container = '\
@@ -593,33 +521,35 @@ function onMessageReceived(e) {
 				
 				$('.div-survey').html(survey_div_container);
 				$('.div-survey').css('display', 'block');
-			}
-			
-			else
-			
-			// Response received whenever the admin starts a survey post-interaction
-			if(jsonMsg.response === START_SURVEY_2) {
-				var survey_form = '';
-				var jsonQuestions = jsonMsg.data.questionsList;
-				for(var i in jsonQuestions) {
-					var answersCnt = parseInt(i) + 1;
-					survey_form += '<p>' + 
-							jsonQuestions[i] + '<br />' +
-							'<input type="text" name="answer' + answersCnt + '" id="answer' + answersCnt + '" class="survey2-answers" maxlength="20" />' +
-							'</p>';
-				}
 				
-				survey_form += '<p>' +
-						'<input type="submit" name="survey2-submit-button" id="survey2-submit-button" value="Send" onfocus="this.blur();" />' +
-						'</p>';
-
-				var survey_div_container = '\
-							<div class="div-survey-container">\
-								' + survey_form + '\
-							</div>';
-
-				$('.div-survey').html(survey_div_container);
-				$('.div-survey').css('display', 'block');
+				$('#survey-submit-button').click(function() {
+					var message = '{ "request": "' + ANSWERS_SURVEY + '", "data": { "id": "' + id + '", "username": "' + username + '", "numSurvey": "' + num_survey + '", "numRound": "' + num_round + '", "answersSurvey": ['; // will be complited in the following
+					var num_answers = $('.survey-answers').length;
+					var readyToSend = true;
+					$('.survey-answers').each(function(index) {
+						if(!$(this).val().match(/^\d+$/)) {
+							alert('Please answer all questions by entering only numeric characters!');
+							readyToSend = false;
+							return false;
+						}
+						message += $(this).val();
+						if(index < num_answers - 1) {
+						 	message += ', ';
+						}
+					});
+					message += '] } }';
+			
+					if(readyToSend) {
+						console.log(message);
+						sendMessage(message);
+				
+						var completed_msg = '<p>Thank you. Please wait for other participants...</p>' + 
+									'<iframe id="tetris-iframe" src="tetris/tetris.html" frameborder="0" border="0" cellspacing="0"></iframe>';
+						$('.div-survey-container').css('text-align', 'center');
+						$('.div-survey-container').css('width', '40%');
+						$('.div-survey-container').html(completed_msg);
+					}
+				});
 			}
 			
 			else
@@ -676,7 +606,7 @@ function registrationFormListener(event) {
 					} else
 					// fail_conn: username already taken
 					if(jsonMsg.response === HTTP_FAIL_CONN) {
-						$('#div-username-warning').text('Your username already exists!').show().fadeOut(5000);
+						$('#div-username-warning').text('Username already taken!').show().fadeOut(5000);
 					} else
 					// already_conn: username already logged in with another browser
 					if(jsonMsg.response === HTTP_ALREADY_CONN) {

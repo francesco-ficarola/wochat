@@ -50,14 +50,13 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import it.uniroma1.dis.wsngroup.wochat.conf.Constants;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.DataOnTheFly;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.Message;
-import it.uniroma1.dis.wsngroup.wochat.dbfly.Questions;
+import it.uniroma1.dis.wsngroup.wochat.dbfly.Survey;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.User;
 import it.uniroma1.dis.wsngroup.wochat.json.MultiUsersResponse;
-import it.uniroma1.dis.wsngroup.wochat.json.QuestionsResponse;
+import it.uniroma1.dis.wsngroup.wochat.json.SurveyResponse;
 import it.uniroma1.dis.wsngroup.wochat.json.SingleUserRequest;
 import it.uniroma1.dis.wsngroup.wochat.json.SingleUserResponse;
-import it.uniroma1.dis.wsngroup.wochat.logging.LogAnswers1;
-import it.uniroma1.dis.wsngroup.wochat.logging.LogAnswers2;
+import it.uniroma1.dis.wsngroup.wochat.logging.LogAnswers;
 import it.uniroma1.dis.wsngroup.wochat.logging.LogConnection;
 import it.uniroma1.dis.wsngroup.wochat.logging.LogInteraction;
 import it.uniroma1.dis.wsngroup.wochat.logging.LogMessage;
@@ -431,40 +430,20 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		else
 			
-		/** Answers to 1st survey */
-		if(userReq.getRequest().equals(Constants.ANSWERS_SURVEY1)) {
+		/** Answers to survey */
+		if(userReq.getRequest().equals(Constants.ANSWERS_SURVEY)) {
+			String numSurvey = userReq.getData().getNumSurvey();
+			String numRound = userReq.getData().getNumRound();
 			String id = userReq.getData().getId();
-			List<String> answers = userReq.getData().getAnswersSurvey1();
-			String line = id + Constants.CVS_DELIMITER;
+			List<String> answers = userReq.getData().getAnswersSurvey();
+			String line = "survey" + numSurvey + Constants.CVS_DELIMITER + "round" + numRound + Constants.CVS_DELIMITER + id + Constants.CVS_DELIMITER;
 			for(int i=0; i<answers.size(); i++) {
 				line += answers.get(i);
 				if(i < answers.size() - 1) {
 					line += Constants.CVS_DELIMITER;
 				}
 			}
-			LogAnswers1.logAnswer(line);
-			
-			/** Notify how many participants have completed survey */
-			data.get_usersIdCompletedSurvey().add(id);
-			Integer completedSurveys = data.get_usersIdCompletedSurvey().size();
-			String systemMsgBody = "Completed surveys: " + completedSurveys;
-			sendSystemNotification(systemMsgBody);
-		}
-		
-		else
-			
-		/** Answers to 2nd survey */
-		if(userReq.getRequest().equals(Constants.ANSWERS_SURVEY2)) {
-			String id = userReq.getData().getId();
-			List<String> answers = userReq.getData().getAnswersSurvey2();
-			String line = id + Constants.CVS_DELIMITER;
-			for(int i=0; i<answers.size(); i++) {
-				line += answers.get(i);
-				if(i < answers.size() - 1) {
-					line += Constants.CVS_DELIMITER;
-				}
-			}
-			LogAnswers2.logAnswer(line);
+			LogAnswers.logAnswer(line);
 			
 			/** Notify how many participants have completed survey */
 			data.get_usersIdCompletedSurvey().add(id);
@@ -585,7 +564,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			long currentTimestamp = System.currentTimeMillis() / 1000L;
 			data.incrementMsgCounter();
 			String seqHex = "0x" + String.format("%08x", data.getMsgCounter() & 0xFFFFFFFF);
-			String sighting = "S t=" + currentTimestamp + " ip=0x00000000" + " id=" + id + " boot_count=0" + " seq=" + seqHex + " strgth=3 flgs=0 last_seen=0";
+			String sighting = "S t=" + currentTimestamp + " src=" + id + " seq=" + seqHex;
 			LogInteraction.logInteraction(sighting);
 			
 			/** Broadcast new user to everyone */
@@ -631,11 +610,10 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		sendSystemNotification(systemMsgBody);
 		
 		/** Check if any survey mode is already running. If yes, warn the just connected user. */
-		if(data.getMode().equals(Constants.SURVEY1_MODE)) {
-			sendSurveyToSingleUser(channel, Constants.START_SURVEY_1);
-		} else
-		if(data.getMode().equals(Constants.SURVEY2_MODE)) {
-			sendSurveyToSingleUser(channel, Constants.START_SURVEY_2);
+		if(data.getMode().equals(Constants.SURVEY_MODE)) {
+			String numSurvey = data.getNumSurvey();
+			String numRound = data.getNumRound();
+			sendSurveyToSingleUser(channel, Constants.START_SURVEY, numSurvey, numRound);
 		}
 	}
 	
@@ -663,21 +641,31 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			/** Start command */
 			if(command.equals(Constants.ADMIN_CMD_START)) {
 				String parameter = splitter[1];
-				if(parameter.equals("survey1")) {
+				if(parameter.equals("survey") && splitter.length > 3) {
 					data.get_usersIdCompletedSurvey().clear();
-					data.setMode(Constants.SURVEY1_MODE);
-					SingleUserResponse adminResp = new SingleUserResponse();
-					adminResp.setResponse(Constants.SURVEY1_MODE);
-					adminChannel.writeAndFlush(new TextWebSocketFrame(gson.toJson(adminResp)));
-					broadcastSurvey(adminChannel, Constants.START_SURVEY_1);
-				} else
-				if(parameter.equals("survey2")) {
-					data.get_usersIdCompletedSurvey().clear();
-					data.setMode(Constants.SURVEY2_MODE);
-					SingleUserResponse adminResp = new SingleUserResponse();
-					adminResp.setResponse(Constants.SURVEY2_MODE);
-					adminChannel.writeAndFlush(new TextWebSocketFrame(gson.toJson(adminResp)));
-					broadcastSurvey(adminChannel, Constants.START_SURVEY_2);
+					// Command example: /start survey s1 r2
+					if(splitter[2].matches("\\bs\\d+\\b") && splitter[3].matches("\\br\\d+\\b")) {
+						String numSurvey = splitter[2].substring(1);
+						String numRound = splitter[3].substring(1);
+						boolean isSurveyEnabled = broadcastSurvey(adminChannel, Constants.START_SURVEY, numSurvey, numRound);
+						if(isSurveyEnabled) {
+							data.setMode(Constants.SURVEY_MODE);
+							data.setNumSurvey(numSurvey);
+							data.setNumRound(numRound);
+							Survey surveyData = new Survey();
+							surveyData.setNumSurvey(numSurvey);
+							surveyData.setNumRound(numRound);
+							SurveyResponse adminResp = new SurveyResponse();
+							adminResp.setResponse(Constants.SURVEY_MODE);
+							adminResp.setData(surveyData);
+							adminChannel.writeAndFlush(new TextWebSocketFrame(gson.toJson(adminResp)));
+							String surveyStringForLog = "### survey s" + numSurvey + " r" + numRound;
+							LogInteraction.logInteraction(surveyStringForLog);
+						}
+					} else {
+						String systemMsgBody = "Command not valid!";
+						sendSystemNotification(systemMsgBody);
+					}
 				} else
 				if(parameter.equals("chat")) {
 					data.setMode(Constants.CHAT_MODE);
@@ -685,6 +673,11 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 					adminResp.setResponse(Constants.CHAT_MODE);
 					adminChannel.writeAndFlush(new TextWebSocketFrame(gson.toJson(adminResp)));
 					broadcastRespToEveryone(Constants.START_CHAT, null, adminChannel);
+					String chatStringForLog = "### chat";
+					LogInteraction.logInteraction(chatStringForLog);
+				} else {
+					String systemMsgBody = "Command not valid!";
+					sendSystemNotification(systemMsgBody);
 				}
 			}
 			
@@ -756,6 +749,12 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 				if(splitter[1].equals("wochat")) {
 					System.exit(0);
 				}
+			}
+			
+			/** Command not valid */
+			else {
+				String systemMsgBody = "Command not valid!";
+				sendSystemNotification(systemMsgBody);
 			}
 		}
 	}
@@ -830,7 +829,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		}
 		
 		/** Logging */
-		String interaction = "C t=" + currentTimestamp + " ip=0x00000000" + " id=" + userIdFrom + " boot_count=0" + " seq=" + seqHex + "[" + userIdTo + "(0)" + " #1]";
+		String interaction = "C t=" + currentTimestamp + " src=" + userIdFrom + " dst=" + userIdTo + " seq=" + seqHex;
 		LogInteraction.logInteraction(interaction);
 		String message = "(" + currentTimestamp + ") " + "[" + userIdFrom + "," + userIdTo + "] " + "{" + msgBody + "}";
 		LogMessage.logMsg(message);
@@ -922,25 +921,31 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(gson.toJson(respToBeBroadcasted)), ChannelMatchers.isNot(channel));
 	}
 	
-	private void broadcastSurvey(Channel adminChannel, String surveyType) {
+	private boolean broadcastSurvey(Channel adminChannel, String command, String numSurvey, String numRound) {
 		BufferedReader br = null;
 		try {
-			br = new BufferedReader(new FileReader(Constants.PATH_SURVEY_FILE));
+			br = new BufferedReader(new FileReader(Constants.PATH_SURVEY_FILE + "." + numSurvey));
 			List<String> questionsList = new LinkedList<String>();
 			String currentLine;
 			while((currentLine = br.readLine()) != null) {
 				questionsList.add(currentLine);
 			}
-			Questions questions = new Questions();
-			questions.setQuestionsList(questionsList);
-			QuestionsResponse questionsResponse = new QuestionsResponse();
-			questionsResponse.setResponse(surveyType);
-			questionsResponse.setData(questions);
+			Survey survey = new Survey();
+			survey.setNumSurvey(numSurvey);
+			survey.setNumRound(numRound);
+			survey.setQuestionsList(questionsList);
+			SurveyResponse questionsResponse = new SurveyResponse();
+			questionsResponse.setResponse(command);
+			questionsResponse.setData(survey);
 			broadcastChannelGroup.writeAndFlush(new TextWebSocketFrame(gson.toJson(questionsResponse)), ChannelMatchers.isNot(adminChannel));
+			return true;
 		} catch (FileNotFoundException e) {
-			logger.error(e.getMessage(), e);
+			sendSystemNotification("Error: No file " + Constants.PATH_SURVEY_FILE + "." + numSurvey + " was found");
+			logger.error(e.getMessage());
+			return false;
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
+			return false;
 		} finally {
 			try {
 				if (br != null) br.close();
@@ -950,20 +955,22 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		}
 	}
 	
-	private void sendSurveyToSingleUser(Channel channel, String surveyType) {
+	private void sendSurveyToSingleUser(Channel channel, String command, String numSurvey, String numRound) {
 		BufferedReader br = null;
 		try {
-			br = new BufferedReader(new FileReader(Constants.PATH_SURVEY_FILE));
+			br = new BufferedReader(new FileReader(Constants.PATH_SURVEY_FILE + "." + numSurvey));
 			List<String> questionsList = new LinkedList<String>();
 			String currentLine;
 			while((currentLine = br.readLine()) != null) {
 				questionsList.add(currentLine);
 			}
-			Questions questions = new Questions();
-			questions.setQuestionsList(questionsList);
-			QuestionsResponse questionsResponse = new QuestionsResponse();
-			questionsResponse.setResponse(surveyType);
-			questionsResponse.setData(questions);
+			Survey survey = new Survey();
+			survey.setNumSurvey(numSurvey);
+			survey.setNumRound(numRound);
+			survey.setQuestionsList(questionsList);
+			SurveyResponse questionsResponse = new SurveyResponse();
+			questionsResponse.setResponse(command);
+			questionsResponse.setData(survey);
 			channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(questionsResponse)));
 		} catch (FileNotFoundException e) {
 			logger.error(e.getMessage(), e);

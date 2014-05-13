@@ -50,4 +50,16 @@ public class Functions {
 		return encoding.decode(ByteBuffer.wrap(encoded)).toString();
 	}
 	
+	public static boolean isInteger(String input)  
+	{  
+		try  
+		{  
+			Integer.parseInt(input);  
+			return true;  
+		}  
+		catch(NumberFormatException e)  
+		{  
+			return false;  
+		}  
+	}
 }

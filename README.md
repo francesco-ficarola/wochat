@@ -56,8 +56,7 @@ If you log into WoChat as Administrator, you can execute the following commands:
 * ```/users surveying``` : sends a list of users still surveying (a ```/users ping``` request must be performed before)
 * ```/msg <your_message>``` : sends everyone admin's message
 * ```/disconnect <id_user>``` : forces user's disconnection
-* ```/start survey1``` : starts the survey mode (round 1)
-* ```/start survey2``` : starts the survey mode (round 2)
+* ```/start survey <number>``` : starts the survey mode
 * ```/start chat``` : starts the chat mode
 * ```/kill wochat``` : kills WoChat
 
@@ -80,7 +79,7 @@ All log-files are saved in the "logs" folder (from the repository root: target/W
 
 * *wochat.log* : system log
 * *connections.log* : information about users' connections
-* *interactions.log* : users' interactions (format parsable by [OpenBeaconParser](https://github.com/francesco-ficarola/OpenBeaconParser))
+* *interactions.log* : users' interactions
 * *messages.csv* : users' messages in CSV format
 * *userslist.csv* : list of all participants in CSV format
 * *survey1.csv* : answers for the first survey in CSV format

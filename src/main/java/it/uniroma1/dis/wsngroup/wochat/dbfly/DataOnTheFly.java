@@ -29,6 +29,8 @@ public class DataOnTheFly {
 	private AtomicLong msgCounter;
 	private int userCounter;
 	private String mode;
+	private String numSurvey;
+	private String numRound;
 	private Channel adminChannel;
 	private String usernameAdmin;
 	private Integer communicationTimeout;
@@ -58,6 +60,8 @@ public class DataOnTheFly {
 		msgCounter = new AtomicLong(0);
 		userCounter = 0;
 		mode = Constants.CHAT_MODE;
+		numSurvey = null;
+		numRound = null;
 		adminChannel = null;
 		usernameAdmin = ServerConfManager.getInstance().getProperty(Constants.ADMIN_USERNAME);
 		communicationTimeout = Integer.parseInt(ServerConfManager.getInstance().getProperty(Constants.COMMUNICATION_TIMEOUT));
@@ -135,6 +139,22 @@ public class DataOnTheFly {
 
 	public void setMode(String mode) {
 		this.mode = mode;
+	}
+
+	public String getNumSurvey() {
+		return numSurvey;
+	}
+
+	public void setNumSurvey(String numSurvey) {
+		this.numSurvey = numSurvey;
+	}
+
+	public String getNumRound() {
+		return numRound;
+	}
+
+	public void setNumRound(String numRound) {
+		this.numRound = numRound;
 	}
 
 	public String getUsernameAdmin() {

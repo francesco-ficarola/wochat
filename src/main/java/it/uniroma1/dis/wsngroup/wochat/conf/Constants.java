@@ -34,10 +34,8 @@ public class Constants {
 	public static final String ADMIN_CMD_USERS = "/users";
 	
 	public static final String PATH_SURVEY_FILE = "conf/woc.survey";
-	public static final String START_SURVEY_1 = "start_survey_1";
-	public static final String START_SURVEY_2 = "start_survey_2";
-	public static final String ANSWERS_SURVEY1 = "answers_survey1";
-	public static final String ANSWERS_SURVEY2 = "answers_survey2";
+	public static final String START_SURVEY = "start_survey";
+	public static final String ANSWERS_SURVEY = "answers_survey";
 	public static final String START_CHAT = "start_chat";
 
 	public static final String HTTP_ADMIN_SUCCESS_CONN = "admin_success_conn";
@@ -45,8 +43,7 @@ public class Constants {
 	public static final String ADMIN_READY = "admin_ready";
 	public static final String SYSTEM_NOTIFICATION = "system_notification";
 	public static final String CHAT_MODE = "chat_mode";
-	public static final String SURVEY1_MODE = "survey1_mode";
-	public static final String SURVEY2_MODE = "survey2_mode";
+	public static final String SURVEY_MODE = "survey_mode";
 	public static final String ADMIN_MSG = "admin_msg";
 	public static final String PING = "ping";
 	public static final String PONG = "pong";

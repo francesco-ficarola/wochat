@@ -53,19 +53,10 @@
 		</layout>
 	</appender>
 	
-	<appender name="Survey1_Log_File" class="org.apache.log4j.DailyRollingFileAppender">
-		<param name="File" value="logs/survey1.csv"/>
+	<appender name="Survey_Log_File" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="logs/survey.csv"/>
 		<param name="Threshold" value="INFO"/>
-		<param name="Append" value="false"/>
-		<layout class="org.apache.log4j.PatternLayout">
-			<param name="ConversionPattern" value="%m%n" />
-		</layout>
-	</appender>
-	
-	<appender name="Survey2_Log_File" class="org.apache.log4j.DailyRollingFileAppender">
-		<param name="File" value="logs/survey2.csv"/>
-		<param name="Threshold" value="INFO"/>
-		<param name="Append" value="false"/>
+		<param name="Append" value="true"/>
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="%m%n" />
 		</layout>
@@ -91,14 +82,9 @@
 		<appender-ref ref="Messages_Log_File" />
 	</logger>
 	
-	<logger name="it.uniroma1.dis.wsngroup.wochat.logging.LogAnswers1" additivity="false">
+	<logger name="it.uniroma1.dis.wsngroup.wochat.logging.LogAnswers" additivity="false">
 		<level value="INFO" />
-		<appender-ref ref="Survey1_Log_File" />
-	</logger>
-	
-	<logger name="it.uniroma1.dis.wsngroup.wochat.logging.LogAnswers2" additivity="false">
-		<level value="INFO" />
-		<appender-ref ref="Survey2_Log_File" />
+		<appender-ref ref="Survey_Log_File" />
 	</logger>
 	
 	<root>
