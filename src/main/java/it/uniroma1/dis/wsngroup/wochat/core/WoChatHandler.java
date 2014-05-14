@@ -4,9 +4,11 @@ import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -21,6 +23,7 @@ import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -197,6 +200,21 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			if(req.getUri().matches(".*\\.gif$")) {
 				res.headers().set(CONTENT_TYPE, "image/gif");
 			} 
+			
+			setContentLength(res, content.readableBytes());
+
+			sendHttpResponse(ctx, req, res);
+			return;
+		}
+		
+		if(req.getUri().matches(".*\\.mp3$")) {
+			/** Sounds loading... */
+			InputStream is = new FileInputStream(new File("./web/" + req.getUri()));
+			byte[] soundInByte = IOUtils.toByteArray(is);
+			
+			ByteBuf content = Unpooled.copiedBuffer(soundInByte);
+			FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
+			res.headers().set(CONTENT_TYPE, "audio/mpeg");
 			
 			setContentLength(res, content.readableBytes());
 

@@ -28,8 +28,8 @@ var PONG = 'pong';
 
 var p_users_list_DEFAULT_BACKGROUND = '#dff6ff';
 var p_users_list_HOVER_BACKGROUND = '#beedff';
-var p_users_list_CLICKED_BACKGROUND = '#00baff';
-var p_users_list_NEW_MESSAGE_BACKGROUND = '#beedff';
+var p_users_list_CLICKED_BACKGROUND = '#ca41f7';
+var p_users_list_NEW_MESSAGE_BACKGROUND = '#00baff';
 
 var service_location;
 var socket;
@@ -39,6 +39,17 @@ var recipient_id;
 var recipient_username;
 var div_chat_log;
 var div_users_list;
+
+// Sounds
+var context;
+var bufferLoader;
+var login_buffer = null;
+var msg_buffer = null;
+var disconnect_buffer = null;
+var chat_buffer = null;
+var tetris_buffer = null;
+var tetris_source = null;
+var AUDIO = true;
 
 
 $(document).ready(function() {
@@ -107,8 +118,8 @@ $(document).ready(function() {
 			e.preventDefault();
 		});
 		
-		$(document).on('click', '.p-users-list', function() {			
-			if(id != $(this).attr('id') && id != ADMIN_ID) {
+		$(document).on('click', '.p-users-list', function() {	
+			if(id != $(this).attr('id') && id != ADMIN_ID && recipient_id != $(this).attr('id')) {
 				$('.p-users-list').css('background-color', p_users_list_DEFAULT_BACKGROUND);
 				$('.p-users-list').css('color', '#333');
 				$('.p-users-list').css('font-weight', 'normal');
@@ -117,7 +128,7 @@ $(document).ready(function() {
 				$(this).css('font-weight', 'bold');
 				
 				recipient_id = $(this).attr('id');
-				recipient_username = $(this).attr('title');
+				recipient_username = $(this).attr('user');
 				$(this).html(recipient_username);
 				console.log('Recipient: ' + recipient_id + ', ' + recipient_username);
 				
@@ -168,6 +179,27 @@ $(document).ready(function() {
 				console.warn("recipient_id is undefined!");
 			}
 		});
+		
+		// JQuery-UI
+		$('#img-audio').tooltip();
+		$('#img-audio').click(function() {
+			if($(this).attr('src') === 'img/audio_on.png') {
+				$(this).attr('src', 'img/audio_off.png');
+				$(this).tooltip({content: "Audio OFF"});
+				AUDIO = false;
+			} else {
+				$(this).attr('src', 'img/audio_on.png');
+				$(this).tooltip({content: "Audio ON"});
+				AUDIO = true;
+			}
+			event.preventDefault();
+		});
+		
+		// BufferLoader for sounds
+		window.AudioContext = window.AudioContext || window.webkitAudioContext;
+		context = new AudioContext();
+		bufferLoader = new BufferLoader(context, ['sounds/login.mp3', 'sounds/message.mp3', 'sounds/mario.mp3', 'sounds/chat.mp3', 'sounds/tetris.mp3'], finishedLoading);
+		bufferLoader.load();
 	}
 });
 
@@ -203,6 +235,8 @@ function onSocketClose(e) {
 	$('.div-survey').css('display', 'none');
 	$('#div-system-msg').html(system_div);
 	$('#div-system-msg').css('display', 'block');
+	
+	if(AUDIO && disconnect_buffer != null) playSound(disconnect_buffer, 0, false);
 }
 
 
@@ -250,8 +284,8 @@ function onMessageReceived(e) {
 						id = usersList[i].id;
 						console.log('My ID is: ' + id);
 					}
-					if(!$('#' + usersList[i].id).exists()) {
-						div_users_list.append('<p class="p-users-list" id="' + usersList[i].id + '" title="' + usersList[i].username + '">' + usersList[i].username + '</p>');
+					if(!$('#' + usersList[i].id).exists() && id !== usersList[i].id) {
+						div_users_list.append('<p class="p-users-list" id="' + usersList[i].id + '" user="' + usersList[i].username + '">' + usersList[i].username + '</p>');
 					}
 				}
 			}
@@ -302,18 +336,21 @@ function onMessageReceived(e) {
 				
 				if(id === my_received_id) {
 					
-					// Move element to top and set a different background color
-					var $recipient_p = $('#' + id_from);
-					$recipient_p.parent().prepend($('#' + id_from));
-					$recipient_p.css('background-color', p_users_list_NEW_MESSAGE_BACKGROUND);
-					
-					// If I still don't have active chats or if I'm already chatting with user sending this message
-					if(recipient_id === undefined || recipient_id === null || recipient_id === id_from) {
+					// If I still don't have active chats
+					if(recipient_id === undefined || recipient_id === null) {
 						$('#' + id_from).trigger('click');
 					}
 					
+					else
+					
 					// I'm chatting with someone else...
-					else {
+					if(recipient_id !== id_from) {
+					
+						// Move element to top and set a different background color
+						var $recipient_p = $('#' + id_from);
+						$recipient_p.parent().prepend($('#' + id_from));
+						$recipient_p.css('background-color', p_users_list_NEW_MESSAGE_BACKGROUND);
+						
 						checkRecipientDiv(id_from, 'none');
 					
 						// Adding the number of messages received from a user next to the sender's username
@@ -324,6 +361,8 @@ function onMessageReceived(e) {
 						} else {
 							$recipient_p.append(' <span id="counter-' + id_from + '">(1)</span>');
 						}
+						
+						if(AUDIO && msg_buffer != null) playSound(msg_buffer, 0, false);
 					}
 					
 					var msg_body = msg_json.body;
@@ -548,6 +587,8 @@ function onMessageReceived(e) {
 						$('.div-survey-container').css('text-align', 'center');
 						$('.div-survey-container').css('width', '40%');
 						$('.div-survey-container').html(completed_msg);
+						
+						if(AUDIO && tetris_buffer != null) tetris_source = playSound(tetris_buffer, 0, true);
 					}
 				});
 			}
@@ -557,6 +598,8 @@ function onMessageReceived(e) {
 			// Response received whenever the admin starts the chat
 			if(jsonMsg.response === START_CHAT) {
 				$('.div-survey').css('display', 'none');
+				if(tetris_source != null) stopSound(tetris_source);
+				if(AUDIO && chat_buffer != null) playSound(chat_buffer, 2);
 			}
 		}
 		
@@ -566,7 +609,7 @@ function onMessageReceived(e) {
 		}
 		
 	} catch(exception) {
-		console.error('Error: ' + msg + ", " + exception);
+		console.error('ERROR: ' + msg + ", EXCEPTION: " + exception);
 	}
 }
 
@@ -641,6 +684,7 @@ function loggedin(json_username) {
 	console.log('My username is: ' + username);
 	var user_status_message = 'You are <span style="color:#27ade2;">' + username + '</span>';
 	$('#p-send-username').html(user_status_message);
+	if(AUDIO && login_buffer != null) playSound(login_buffer, 0);
 	
 	// Sending message to join the chat
 	var join_chat_message = '{ "request": "' + JOIN_CHAT + '", "data": { "username": "' + username + '" } }';
@@ -683,3 +727,28 @@ String.prototype.replaceAll = function(str1, str2, ignore)
 {
 	return this.replace(new RegExp(str1.replace(/([\/\,\!\\\^\$\{\}\[\]\(\)\.\*\+\?\|\<\>\-\&])/g,"\\$&"),(ignore?"gi":"g")),(typeof(str2)=="string")?str2.replace(/\$/g,"$$$$"):str2);
 };
+
+function finishedLoading(bufferList) {
+	login_buffer = bufferList[0];
+	msg_buffer = bufferList[1];
+	disconnect_buffer = bufferList[2];
+	chat_buffer = bufferList[3];
+	tetris_buffer = bufferList[4];
+}
+
+function playSound(buffer, time, isLoop) {
+	var source = context.createBufferSource();
+  	source.buffer = buffer;
+  	source.loop = isLoop;
+	source.connect(context.destination);
+	
+	source.start(time);
+	return source;
+}
+
+function stopSound(source) {
+	if (!source.stop) {
+		source.stop = source.noteOff;
+	}
+	source.stop(0);
+}
