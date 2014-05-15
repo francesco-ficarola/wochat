@@ -33,7 +33,8 @@ public class Constants {
 	public static final String ADMIN_CMD_MSG = "/msg";
 	public static final String ADMIN_CMD_USERS = "/users";
 	
-	public static final String PATH_SURVEY_FILE = "conf/woc.survey";
+	public static final String PATH_CONF = "conf/";
+	public static final String PATH_SURVEY_FILE = PATH_CONF + "woc.survey";
 	public static final String START_SURVEY = "start_survey";
 	public static final String ANSWERS_SURVEY = "answers_survey";
 	public static final String START_CHAT = "start_chat";

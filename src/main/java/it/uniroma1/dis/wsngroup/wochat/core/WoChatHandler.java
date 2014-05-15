@@ -945,8 +945,19 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			br = new BufferedReader(new FileReader(Constants.PATH_SURVEY_FILE + "." + numSurvey));
 			List<String> questionsList = new LinkedList<String>();
 			String currentLine;
+			Integer indexQuestions = 0;
 			while((currentLine = br.readLine()) != null) {
-				questionsList.add(currentLine);
+				if(currentLine.trim().matches("\\[img\\].+\\[/img\\]")) {
+					currentLine = currentLine.trim().replaceAll("(\\[img\\])", "").replaceAll("\\[/img\\]", "");
+					if(indexQuestions > 0) {
+						String addImg = questionsList.get(indexQuestions-1);
+						addImg += "<br /><br />" + "<img src=\"" + currentLine + "\" class=\"img-survey\" />";
+						questionsList.set(indexQuestions-1, addImg);
+					}
+				} else {
+					questionsList.add(currentLine);
+					indexQuestions++;
+				}
 			}
 			Survey survey = new Survey();
 			survey.setNumSurvey(numSurvey);
@@ -979,8 +990,19 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			br = new BufferedReader(new FileReader(Constants.PATH_SURVEY_FILE + "." + numSurvey));
 			List<String> questionsList = new LinkedList<String>();
 			String currentLine;
+			Integer indexQuestions = 0;
 			while((currentLine = br.readLine()) != null) {
-				questionsList.add(currentLine);
+				if(currentLine.trim().matches("\\[img\\].+\\[/img\\]")) {
+					currentLine = currentLine.trim().replaceAll("(\\[img\\])", "").replaceAll("\\[/img\\]", "");
+					if(indexQuestions > 0) {
+						String addImg = questionsList.get(indexQuestions-1);
+						addImg += "<br /><br />" + "<img src=\"" + currentLine + "\" class=\"img-survey\" />";
+						questionsList.set(indexQuestions-1, addImg);
+					}
+				} else {
+					questionsList.add(currentLine);
+					indexQuestions++;
+				}
 			}
 			Survey survey = new Survey();
 			survey.setNumSurvey(numSurvey);

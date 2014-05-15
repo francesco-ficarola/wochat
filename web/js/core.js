@@ -181,6 +181,15 @@ $(document).ready(function() {
 		});
 		
 		// JQuery-UI
+		$('#dialog-survey').dialog({autoOpen: false, minWidth: 400, minHeight: 50});
+		$('#img-survey').tooltip();
+		$('#img-survey').click(function() {
+			if(id === undefined) {
+				alert('You need to log into WoChat to see the survey!');
+			} else {
+				$('#dialog-survey').dialog('open');
+			}
+		});
 		$('#img-audio').tooltip();
 		$('#img-audio').click(function() {
 			if($(this).attr('src') === 'img/audio_on.png') {
@@ -226,13 +235,16 @@ function onSocketOpen(e) {
 
 function onSocketClose(e) {
 	console.log('Web Socket closed.');
-	var system_msg = 'Chat went down or you disconnected.<br /><br />Try to reload this page and see what happens!';
+	var system_msg = 'WoChat went down or you disconnected.<br /><br />Try to reload this page and see what happens!';
 	var system_div = '\
 				<div id="div-system-msg-container">\
 					<p>' + system_msg + '</p>\
 				</div>';
 
 	$('.div-survey').css('display', 'none');
+	if ($('#dialog-survey').dialog('isOpen')) {
+		$('#dialog-survey').dialog('close');
+	}
 	$('#div-system-msg').html(system_div);
 	$('#div-system-msg').css('display', 'block');
 	
@@ -540,9 +552,13 @@ function onMessageReceived(e) {
 				var num_survey = jsonMsg.data.numSurvey;
 				var num_round = jsonMsg.data.numRound;
 				var survey_form = '';
+				var dialog_questions = '';
 				var jsonQuestions = jsonMsg.data.questionsList;
 				for(var i in jsonQuestions) {
 					var answersCnt = parseInt(i) + 1;
+					dialog_questions += '<p>' + 
+							jsonQuestions[i] +
+							'</p>';
 					survey_form += '<p>' + 
 							jsonQuestions[i] + '<br />' +
 							'<input type="text" name="answer' + answersCnt + '" id="answer' + answersCnt + '" class="survey-answers" maxlength="20" />' +
@@ -558,8 +574,13 @@ function onMessageReceived(e) {
 								' + survey_form + '\
 							</div>';
 				
+				$('#dialog-survey').html(dialog_questions);
 				$('.div-survey').html(survey_div_container);
 				$('.div-survey').css('display', 'block');
+				
+				if ($('#dialog-survey').dialog('isOpen')) {
+					$('#dialog-survey').dialog('close');
+				}
 				
 				$('#survey-submit-button').click(function() {
 					var message = '{ "request": "' + ANSWERS_SURVEY + '", "data": { "id": "' + id + '", "username": "' + username + '", "numSurvey": "' + num_survey + '", "numRound": "' + num_round + '", "answersSurvey": ['; // will be complited in the following

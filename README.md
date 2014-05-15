@@ -70,7 +70,7 @@ Below all commands available for users:
 Survey
 ------
 
-All questions must be written in **conf/woc.survey**, one for each line.
+All questions must be written in **conf/woc.survey.\*** files, one for each line. Images in surveys are supported by the following syntax: ```[img]url_img[/img]``` (required a dedicated line).
 
 Log-files
 ---------

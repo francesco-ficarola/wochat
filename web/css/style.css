@@ -104,16 +104,11 @@ a.bodylink:visited {
 #div-system-msg {
 	display: none;
 	position: fixed;
-	background-color: #000000;
+	background-color: rgba(0, 0, 0, 0.9);
 	z-index: 1;
 	width: 100%;
 	height: 100%;
 	overflow: auto;
-	opacity: 0.95;
-	filter:alpha(opacity=90);
-	filter:"alpha(opacity=90)";
-	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(opacity=90)";
-	filter: progid:DXImageTransform.Microsoft.Alpha(opacity=90);
 }
 
 #div-system-msg-container {
@@ -226,6 +221,17 @@ a.bodylink:visited {
 	padding: 0;
 }
 
+#img-survey {
+	right: 10px;
+	display: block;
+	position: relative;
+	height: 50px;
+	margin: 0;
+	padding: 0;
+	float: right;
+	cursor: pointer
+}
+
 #p-chat-title {
 	height: 30px;
 	color: #555;
@@ -326,16 +332,12 @@ footer {
 .div-survey {
 	display: none;
 	position: fixed;
-	background-color: #000000;
+	background-color: rgba(0, 0, 0, 0.9);
 	z-index: 1;
 	width: 100%;
 	height: 100%;
 	overflow: auto;
-	opacity: 0.95;
-	filter:alpha(opacity=90);
-	filter:"alpha(opacity=90)";
-	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(opacity=90)";
-	filter: progid:DXImageTransform.Microsoft.Alpha(opacity=90);
+	
 }
 
 .div-survey-container {
@@ -349,13 +351,17 @@ footer {
 	margin-top: 5%;
 	margin-left: auto;
 	margin-right: auto;
-	background-color: #222;
+	background-color: rgba(34, 34, 34, 0.6);
 	border: 4px double #fff;
 	overflow: auto;
 }
 
 .div-survey-container p {
 	
+}
+
+.img-survey {
+	max-width: 80%;
 }
 
 .p-info {
