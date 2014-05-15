@@ -1,3 +1,61 @@
+var context;
+var tetris_buffer = null;
+var tetris_source = null;
+var gainNode = null;
+
+window.addEventListener('load', init, false);
+window.addEventListener('message', function(event) {
+	if (event.data === 'stopAudio') {
+		if (tetris_source != null) stopSound(tetris_source);
+	}
+}, false);
+
+function init() {
+	window.AudioContext = window.AudioContext || window.webkitAudioContext;
+	context = new AudioContext();
+	
+	var request = new XMLHttpRequest();
+	request.open('GET', 'tetris.mp3', true);
+	request.responseType = 'arraybuffer';
+	
+	request.onload = function() {
+		context.decodeAudioData(request.response, function(buffer) {
+			tetris_buffer = buffer;
+		}, onError);
+	}
+	request.send();
+}
+
+function onError(e) {
+	console.log(e);
+}
+
+function playSound(buffer, time, isLoop) {
+	var source = context.createBufferSource();
+	gainNode = context.createGain();
+  	source.buffer = buffer;
+  	source.loop = isLoop;
+  	source.connect(gainNode);
+	gainNode.connect(context.destination);
+	gainNode.gain.value = document.getElementById("volume-bar").value / 100;
+	
+	source.start(time);
+	return source;
+}
+
+function stopSound(source) {
+	if (!source.stop) {
+		source.stop = source.noteOff;
+	}
+	source.stop(0);
+}
+
+function changeVolume(element) {
+	var volume = element.value;
+	var fraction = parseInt(element.value) / parseInt(element.max);
+	gainNode.gain.value = fraction * fraction;
+}
+
 function Tetris()
 {
 	var self = this;
@@ -27,6 +85,8 @@ function Tetris()
 		self.puzzle = new Puzzle(self, self.area);
 		if (self.puzzle.mayPlace()) {
 			self.puzzle.place();
+			if (tetris_source != null) stopSound(tetris_source);
+			tetris_source = playSound(tetris_buffer, 0, true);
 		} else {
 			self.gameOver();
 		}
@@ -70,6 +130,7 @@ function Tetris()
 			document.getElementById('tetris-resume').style.display = 'none';
 			self.stats.timerId = setInterval(self.stats.incTime, 1000);
 			self.paused = false;
+			tetris_source = playSound(tetris_buffer, 0, true);
 		} else {
 			if (!self.puzzle.isRunning()) return;
 			if (self.puzzle.fallDownID) clearTimeout(self.puzzle.fallDownID);
@@ -78,6 +139,7 @@ function Tetris()
 			clearTimeout(self.stats.timerId);
 			self.paused = true;
 			self.puzzle.running = false;
+			if (tetris_source != null) stopSound(tetris_source);
 		}
 	};
 
@@ -93,6 +155,7 @@ function Tetris()
 		self.puzzle.stop();
 		document.getElementById("tetris-nextpuzzle").style.display = "none";
 		document.getElementById("tetris-gameover").style.display = "block";
+		if (tetris_source != null) stopSound(tetris_source);
 	};
 
 	/**

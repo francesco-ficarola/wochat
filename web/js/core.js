@@ -47,8 +47,6 @@ var login_buffer = null;
 var msg_buffer = null;
 var disconnect_buffer = null;
 var chat_buffer = null;
-var tetris_buffer = null;
-var tetris_source = null;
 var AUDIO = true;
 
 
@@ -207,7 +205,7 @@ $(document).ready(function() {
 		// BufferLoader for sounds
 		window.AudioContext = window.AudioContext || window.webkitAudioContext;
 		context = new AudioContext();
-		bufferLoader = new BufferLoader(context, ['sounds/login.mp3', 'sounds/message.mp3', 'sounds/mario.mp3', 'sounds/chat.mp3', 'sounds/tetris.mp3'], finishedLoading);
+		bufferLoader = new BufferLoader(context, ['sounds/login.mp3', 'sounds/message.mp3', 'sounds/mario.mp3', 'sounds/chat.mp3'], finishedLoading);
 		bufferLoader.load();
 	}
 });
@@ -608,8 +606,6 @@ function onMessageReceived(e) {
 						$('.div-survey-container').css('text-align', 'center');
 						$('.div-survey-container').css('width', '40%');
 						$('.div-survey-container').html(completed_msg);
-						
-						if(AUDIO && tetris_buffer != null) tetris_source = playSound(tetris_buffer, 0, true);
 					}
 				});
 			}
@@ -618,8 +614,11 @@ function onMessageReceived(e) {
 			
 			// Response received whenever the admin starts the chat
 			if(jsonMsg.response === START_CHAT) {
+				// http://stackoverflow.com/questions/23687635/how-to-stop-audio-in-an-iframe-using-web-audio-api-after-hiding-its-container-di
+				var iframe = document.getElementById('tetris-iframe');
+				iframe.contentWindow.postMessage('stopAudio', '*');
+				
 				$('.div-survey').css('display', 'none');
-				if(tetris_source != null) stopSound(tetris_source);
 				if(AUDIO && chat_buffer != null) playSound(chat_buffer, 2);
 			}
 		}
@@ -754,7 +753,6 @@ function finishedLoading(bufferList) {
 	msg_buffer = bufferList[1];
 	disconnect_buffer = bufferList[2];
 	chat_buffer = bufferList[3];
-	tetris_buffer = bufferList[4];
 }
 
 function playSound(buffer, time, isLoop) {
