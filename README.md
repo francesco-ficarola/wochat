@@ -82,8 +82,7 @@ All log-files are saved in the "logs" folder (from the repository root: target/W
 * *interactions.log* : users' interactions
 * *messages.csv* : users' messages in CSV format
 * *userslist.csv* : list of all participants in CSV format
-* *survey1.csv* : answers for the first survey in CSV format
-* *survey2.csv* : answers for the second survey in CSV format
+* *survey.csv* : answers from all surveys in CSV format
 
 Screenshots
 -----------
