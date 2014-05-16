@@ -3,7 +3,7 @@ WoChat
 
 A *WebSocket*-based chat for **Wisdom of Crowds** experiments, which are usually deployed in LANs. The server-side has been developed in Java using Netty, while the client-side has been written in Javascript using JQuery.
 
-Users are not required to register to log into WoChat; indeed, the WoChat software is designed to be totally anonymous and its users management system is based on IP addressing. Each user has to have a distinct IP and their sessions remain active until: a) they force disconnection, or b) admin disconnect them, or c) their connection go down. Therefore, if a user close the WoChat tab or the browser, his session remains operating and resumes as soon as he comes back.
+Users are not required to register to log into WoChat; indeed, the WoChat software is designed to be totally anonymous and its users management system is based on IP addressing. Each user has to have a distinct IP and their sessions remain active until: a) they force disconnection, or b) admin disconnect them, or c) their connection go down. Therefore, if a user closes the WoChat tab or the browser, his session remains operating and resumes as soon as he comes back.
 
 Download
 --------

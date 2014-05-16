@@ -26,6 +26,7 @@ var SURVEY_MODE = 'survey_mode';
 var ADMIN_MSG = 'admin_msg';
 var PING = 'ping';
 var PONG = 'pong';
+var USER_KILL_ME_CMD = '/killme now';
 
 var p_users_list_DEFAULT_BACKGROUND = '#dff6ff';
 var p_users_list_HOVER_BACKGROUND = '#beedff';
@@ -173,9 +174,16 @@ $(document).ready(function() {
 					sendMessage(json_data);
 				}
 			} else {
-				var chat_title = 'Click on a user in the users\' list and start chatting!';
-				$('#p-chat-title').hide().html(chat_title).fadeIn('slow');
-				console.warn("recipient_id is undefined!");
+				var $textarea = $('#ta-message');
+				var msg_body = $textarea.val().trim();
+				if(msg_body === USER_KILL_ME_CMD) {
+					var json_data = '{"request": "' + DELIVER_MSG + '", "data": {"id": "' + id + '", "username": "' + username + '", "msg": {"body": "' + msg_body + '"}}}';
+					sendMessage(json_data);
+				} else {
+					var chat_title = 'Click on a user in the users\' list and start chatting!';
+					$('#p-chat-title').hide().html(chat_title).fadeIn('slow');
+					console.warn("recipient_id is undefined!");
+				}
 			}
 		});
 		
@@ -777,11 +785,4 @@ function playSound(buffer, time, isLoop) {
 	
 	source.start(time);
 	return source;
-}
-
-function stopSound(source) {
-	if (!source.stop) {
-		source.stop = source.noteOff;
-	}
-	source.stop(0);
 }

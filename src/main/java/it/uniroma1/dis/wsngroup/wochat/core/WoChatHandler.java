@@ -787,12 +787,17 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		String remoteHost = getRemoteHost(channel);
 		ChannelGroup channelsSender = channelsMap_IpChannelGroup.get(remoteHost);
 		
+		// Source user information
 		User userFrom = userReq.getData();
 		String userIdFrom = userFrom.getId();
 		String usernameFrom = userFrom.getUsername();
-		User userTo = userFrom.getMsg().getReceiver();
-		String userIdTo = userTo.getId();
+		
+		// Message
 		String msgBody = userFrom.getMsg().getBody();
+		
+		/**************************/
+		/** User commands section */
+		/**************************/
 		
 		/** KillMe now */
 		if(msgBody.equals(Constants.USER_KILL_ME_CMD)) {
@@ -801,6 +806,13 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			}
 			return;
 		}
+		
+		/*************************/
+		
+		// Destination user information: not available for commands like /killme now
+		User userTo = userFrom.getMsg().getReceiver();
+		String userIdTo = userTo.getId();
+		
 		
 		/** Req message must be forwarded to other opened channels of sender */
 		if(channelsSender.size() > 1) {
