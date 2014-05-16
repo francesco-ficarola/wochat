@@ -18,6 +18,7 @@ var ADMIN_READY = 'admin_ready';
 var SYSTEM_NOTIFICATION = 'system_notification';
 var ADMIN_ID = '0000';
 var START_SURVEY = 'start_survey';
+var ALREADY_SURVEY = 'already_survey';
 var START_CHAT = 'start_chat';
 var ANSWERS_SURVEY = 'answers_survey';
 var CHAT_MODE = 'chat_mode';
@@ -608,6 +609,19 @@ function onMessageReceived(e) {
 						$('.div-survey-container').html(completed_msg);
 					}
 				});
+			}
+			
+			else
+			
+			if(jsonMsg.response === ALREADY_SURVEY) {
+				var completed_msg = '<p>Thank you. Please wait for other participants...</p>' + 
+							'<iframe id="tetris-iframe" src="tetris/tetris.html" frameborder="0" border="0" cellspacing="0"></iframe>';
+				var survey_div_container = '<div class="div-survey-container"></div>';
+				$('.div-survey').html(survey_div_container);
+				$('.div-survey-container').css('text-align', 'center');
+				$('.div-survey-container').css('width', '40%');
+				$('.div-survey-container').html(completed_msg);
+				$('.div-survey').css('display', 'block');
 			}
 			
 			else

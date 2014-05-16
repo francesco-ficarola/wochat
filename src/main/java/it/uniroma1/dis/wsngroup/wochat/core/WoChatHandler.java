@@ -629,9 +629,15 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		
 		/** Check if any survey mode is already running. If yes, warn the just connected user. */
 		if(data.getMode().equals(Constants.SURVEY_MODE)) {
-			String numSurvey = data.getNumSurvey();
-			String numRound = data.getNumRound();
-			sendSurveyToSingleUser(channel, Constants.START_SURVEY, numSurvey, numRound);
+			if(!data.get_usersIdCompletedSurvey().contains(id)) {
+				String numSurvey = data.getNumSurvey();
+				String numRound = data.getNumRound();
+				sendSurveyToSingleUser(channel, Constants.START_SURVEY, numSurvey, numRound);
+			} else {
+				SingleUserResponse alreadySurveyedResp = new SingleUserResponse();
+				alreadySurveyedResp.setResponse(Constants.ALREADY_SURVEY);
+				channel.writeAndFlush(new TextWebSocketFrame(gson.toJson(alreadySurveyedResp)));
+			}
 		}
 	}
 	
