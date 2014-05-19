@@ -636,9 +636,11 @@ function onMessageReceived(e) {
 			
 			// Response received whenever the admin starts the chat
 			if(jsonMsg.response === START_CHAT) {
-				// http://stackoverflow.com/questions/23687635/how-to-stop-audio-in-an-iframe-using-web-audio-api-after-hiding-its-container-di
-				var iframe = document.getElementById('tetris-iframe');
-				iframe.contentWindow.postMessage('stopAudio', '*');
+				if($('#tetris-iframe').exists()) {
+					// http://stackoverflow.com/questions/23687635/how-to-stop-audio-in-an-iframe-using-web-audio-api-after-hiding-its-container-di
+					var iframe = document.getElementById('tetris-iframe');
+					iframe.contentWindow.postMessage('stopAudio', '*');
+				}
 				
 				$('.div-survey').css('display', 'none');
 				if(AUDIO && chat_buffer != null) playSound(chat_buffer, 2);

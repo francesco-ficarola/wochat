@@ -37,7 +37,7 @@ function playSound(buffer, time, isLoop) {
   	source.loop = isLoop;
   	source.connect(gainNode);
 	gainNode.connect(context.destination);
-	gainNode.gain.value = document.getElementById("volume-bar").value / 100;
+	gainNode.gain.value = document.getElementById('volume-bar').value / 100.0;
 	
 	source.start(time);
 	return source;
