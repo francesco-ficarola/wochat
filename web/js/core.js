@@ -49,7 +49,7 @@ var login_buffer = null;
 var msg_buffer = null;
 var disconnect_buffer = null;
 var chat_buffer = null;
-var AUDIO = true;
+var AUDIO = false;
 
 
 $(document).ready(function() {
