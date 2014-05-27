@@ -8,7 +8,7 @@ public class User {
 	private Message msg;
 	private String numSurvey;
 	private String numRound;
-	private List<String> answersSurvey;
+	private List<Answer> answersSurvey;
 	
 	public String getId() {
 		return id;
@@ -52,11 +52,11 @@ public class User {
 		this.numRound = numRound;
 	}
 
-	public List<String> getAnswersSurvey() {
+	public List<Answer> getAnswersSurvey() {
 		return answersSurvey;
 	}
 
-	public void setAnswersSurvey(List<String> answersSurvey) {
+	public void setAnswersSurvey(List<Answer> answersSurvey) {
 		this.answersSurvey = answersSurvey;
 	}
 }

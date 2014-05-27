@@ -51,6 +51,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import it.uniroma1.dis.wsngroup.wochat.conf.Constants;
+import it.uniroma1.dis.wsngroup.wochat.dbfly.Answer;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.DataOnTheFly;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.Message;
 import it.uniroma1.dis.wsngroup.wochat.dbfly.Survey;
@@ -453,10 +454,11 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			String numSurvey = userReq.getData().getNumSurvey();
 			String numRound = userReq.getData().getNumRound();
 			String id = userReq.getData().getId();
-			List<String> answers = userReq.getData().getAnswersSurvey();
+			List<Answer> answers = userReq.getData().getAnswersSurvey();
 			String line = "survey" + numSurvey + Constants.CVS_DELIMITER + "round" + numRound + Constants.CVS_DELIMITER + id + Constants.CVS_DELIMITER;
 			for(int i=0; i<answers.size(); i++) {
-				line += answers.get(i);
+				Answer answer = answers.get(i);
+				line += answer.getAnswerString() + Constants.CVS_DELIMITER + answer.getConfidence();
 				if(i < answers.size() - 1) {
 					line += Constants.CVS_DELIMITER;
 				}
@@ -973,7 +975,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 						questionsList.set(indexQuestions-1, addImg);
 					}
 				} else {
-					questionsList.add(currentLine);
+					questionsList.add(currentLine.trim());
 					indexQuestions++;
 				}
 			}

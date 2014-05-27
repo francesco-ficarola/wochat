@@ -154,11 +154,10 @@ $(document).ready(function() {
 				if(msg_body != '') {
 					msg_body = htmlEscape(msg_body);
 					var $recipient_div = $('#div-' + recipient_id);
-					var msg_struct = '\
-							<div class="div-chat-user-msg">\
-								<div class="div-chat-username">' + username + '</div>\
-								<div class="div-chat-message">' + msg_body + '</div>\
-							</div>';
+					var msg_struct = '<div class="div-chat-user-msg">' +
+								'<div class="div-chat-username">' + username + '</div>' +
+								'<div class="div-chat-message">' + msg_body + '</div>' +
+							'</div>';
 					$recipient_div.append(msg_struct);
 					$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 					$textarea.val('');
@@ -243,10 +242,9 @@ function onSocketOpen(e) {
 function onSocketClose(e) {
 	console.log('Web Socket closed.');
 	var system_msg = 'WoChat went down or you disconnected.<br /><br />Try to reload this page and see what happens!';
-	var system_div = '\
-				<div id="div-system-msg-container">\
-					<p>' + system_msg + '</p>\
-				</div>';
+	var system_div = '<div id="div-system-msg-container">' +
+				'<p>' + system_msg + '</p>' +
+			'</div>';
 
 	$('.div-survey').css('display', 'none');
 	if ($('#dialog-survey').dialog('isOpen')) {
@@ -275,12 +273,10 @@ function onMessageReceived(e) {
 		
 			// Response received whenever a new user opens the chat
 			if(jsonMsg.response === NEW_USER_STATUS) {
-				var registration_form = '\
-							<form name="form-send-username" id="form-send-username">\
-								<input type="text" name="user-input-box" id="user-input-box" placeholder="Your username here..." maxlength="15" />\
-								<input type="submit" name="user-submit-button" id="user-submit-button" value="Connect" onfocus="this.blur();" />\
-							</form>\
-							';
+				var registration_form = '<form name="form-send-username" id="form-send-username">' +
+								'<input type="text" name="user-input-box" id="user-input-box" placeholder="Your username here..." maxlength="15" />' +
+								'<input type="submit" name="user-submit-button" id="user-submit-button" value="Connect" onfocus="this.blur();" />' +
+							'</form>';
 				$('#p-send-username').hide().html(registration_form).fadeIn('slow');
 				$('#user-input-box').focus();
 				$('#form-send-username').on('submit', registrationFormListener);
@@ -320,11 +316,10 @@ function onMessageReceived(e) {
 						var receiver_id =  usersList[i].id;
 						var msg_body = 'User seems to be disconnected. Closing...';
 						var $recipient_div = $('#div-' + receiver_id);
-						var msg_struct = '\
-								<div class="div-chat-user-msg">\
-									<div class="div-chat-username" style="background-color:red;">system message</div>\
-									<div class="div-chat-message">' + msg_body + '</div>\
-								</div>';
+						var msg_struct = '<div class="div-chat-user-msg">' +
+									'<div class="div-chat-username" style="background-color:red;">system message</div>' +
+									'<div class="div-chat-message">' + msg_body + '</div>' +
+								'</div>';
 						$recipient_div.append(msg_struct);
 						$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 						$recipient_div.fadeOut(5000, function() {
@@ -386,11 +381,10 @@ function onMessageReceived(e) {
 					
 					var msg_body = msg_json.body;
 					var $recipient_div = $('#div-' + id_from);
-					var msg_struct = '\
-							<div class="div-chat-user-msg">\
-								<div class="div-chat-username" style="background-color:#ca41f7;">' + username_from + '</div>\
-								<div class="div-chat-message">' + msg_body + '</div>\
-							</div>';
+					var msg_struct = '<div class="div-chat-user-msg">' +
+								'<div class="div-chat-username" style="background-color:#ca41f7;">' + username_from + '</div>' +
+								'<div class="div-chat-message">' + msg_body + '</div>' +
+							'</div>';
 					$recipient_div.append(msg_struct);
 					$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 					
@@ -416,11 +410,10 @@ function onMessageReceived(e) {
 					if(recipient_id === receiver_id && $('#div-' + receiver_id).exists()) {
 						var msg_body = 'Message delivering was failed!';
 						var $recipient_div = $('#div-' + receiver_id);
-						var msg_struct = '\
-								<div class="div-chat-user-msg">\
-									<div class="div-chat-username" style="background-color:red;">system message</div>\
-									<div class="div-chat-message">' + msg_body + '</div>\
-								</div>';
+						var msg_struct = '<div class="div-chat-user-msg">' +
+									'<div class="div-chat-username" style="background-color:red;">system message</div>' +
+									'<div class="div-chat-message">' + msg_body + '</div>' +
+								'</div>';
 						$recipient_div.append(msg_struct);
 						$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 					}
@@ -449,11 +442,10 @@ function onMessageReceived(e) {
 				
 					var msg_body = msg_json.body;
 					var $recipient_div = $('#div-' + receiver_id);
-					var msg_struct = '\
-							<div class="div-chat-user-msg">\
-								<div class="div-chat-username" style="background-color:#27ade2;">' + username_from + '</div>\
-								<div class="div-chat-message">' + msg_body + '</div>\
-							</div>';
+					var msg_struct = '<div class="div-chat-user-msg">' +
+								'<div class="div-chat-username" style="background-color:#27ade2;">' + username_from + '</div>' +
+								'<div class="div-chat-message">' + msg_body + '</div>' +
+							'</div>';
 					$recipient_div.append(msg_struct);
 					$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 				} else {
@@ -482,11 +474,10 @@ function onMessageReceived(e) {
 			if(jsonMsg.response === SYSTEM_NOTIFICATION) {
 				var msg_body = jsonMsg.data.msg.body;
 				var $recipient_div = $('#div-' + recipient_id);
-				var msg_struct = '\
-						<div class="div-chat-user-msg">\
-							<div class="div-chat-username" style="background-color:red;">system message</div>\
-							<div class="div-chat-message">' + msg_body + '</div>\
-						</div>';
+				var msg_struct = '<div class="div-chat-user-msg">' +
+							'<div class="div-chat-username" style="background-color:red;">system message</div>' +
+							'<div class="div-chat-message">' + msg_body + '</div>' +
+						'</div>';
 				$recipient_div.append(msg_struct);
 				$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 			}
@@ -497,11 +488,10 @@ function onMessageReceived(e) {
 			if(jsonMsg.response === CHAT_MODE) {
 				var msg_body = 'Chat mode enabled.';
 				var $recipient_div = $('#div-' + recipient_id);
-				var msg_struct = '\
-						<div class="div-chat-user-msg">\
-							<div class="div-chat-username" style="background-color:red;">system message</div>\
-							<div class="div-chat-message">' + msg_body + '</div>\
-						</div>';
+				var msg_struct = '<div class="div-chat-user-msg">' +
+							'<div class="div-chat-username" style="background-color:red;">system message</div>' +
+							'<div class="div-chat-message">' + msg_body + '</div>' +
+						'</div>';
 				$recipient_div.append(msg_struct);
 				$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 			}
@@ -514,11 +504,10 @@ function onMessageReceived(e) {
 				var num_round = jsonMsg.data.numRound;
 				var msg_body = 'Survey ' + num_survey + ', round ' + num_round + ' enabled.';
 				var $recipient_div = $('#div-' + recipient_id);
-				var msg_struct = '\
-						<div class="div-chat-user-msg">\
-							<div class="div-chat-username" style="background-color:red;">system message</div>\
-							<div class="div-chat-message">' + msg_body + '</div>\
-						</div>';
+				var msg_struct = '<div class="div-chat-user-msg">' +
+							'<div class="div-chat-username" style="background-color:red;">system message</div>' +
+							'<div class="div-chat-message">' + msg_body + '</div>' +
+						'</div>';
 				$recipient_div.append(msg_struct);
 				$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 			}
@@ -535,11 +524,10 @@ function onMessageReceived(e) {
 				checkRecipientDiv(recipient_id, 'block');
 				
 				var $recipient_div = $('#div-' + recipient_id);
-				var msg_struct = '\
-						<div class="div-chat-user-msg">\
-							<div class="div-chat-username" style="background-color:red;">system message</div>\
-							<div class="div-chat-message">' + msg_body + '</div>\
-						</div>';
+				var msg_struct = '<div class="div-chat-user-msg">' +
+							'<div class="div-chat-username" style="background-color:red;">system message</div>' +
+							'<div class="div-chat-message">' + msg_body + '</div>' +
+						'</div>';
 				$recipient_div.append(msg_struct);
 				$recipient_div.animate({scrollTop: $recipient_div.prop("scrollHeight")}, 250);
 			}
@@ -567,39 +555,62 @@ function onMessageReceived(e) {
 							jsonQuestions[i] +
 							'</p>';
 					survey_form += '<p>' + 
-							jsonQuestions[i] + '<br />' +
+							'<span style="color:#ffff55">' + jsonQuestions[i] + '</span><br /><br />' +
 							'<input type="text" name="answer' + answersCnt + '" id="answer' + answersCnt + '" class="survey-answers" maxlength="20" />' +
+							'<fieldset>' +
+							'<legend style="font-size:11pt;">Level of Confidence</legend>' +
+							'<div id="radioConf' + answersCnt + '" style="font-size:10pt;">' +
+								'<input type="radio" id="radio1_answer' + answersCnt + '" name="radioConfidence' + answersCnt + '" value="1" /><label for="radio1_answer' + answersCnt + '">Very Low</label>' +
+								'<input type="radio" id="radio2_answer' + answersCnt + '" name="radioConfidence' + answersCnt + '" value="2" /><label for="radio2_answer' + answersCnt + '">Low</label>' +
+								'<input type="radio" id="radio3_answer' + answersCnt + '" name="radioConfidence' + answersCnt + '" value="3" /><label for="radio3_answer' + answersCnt + '">Moderate</label>' +
+								'<input type="radio" id="radio4_answer' + answersCnt + '" name="radioConfidence' + answersCnt + '" value="4" /><label for="radio4_answer' + answersCnt + '">High</label>' +
+								'<input type="radio" id="radio5_answer' + answersCnt + '" name="radioConfidence' + answersCnt + '" value="5" /><label for="radio5_answer' + answersCnt + '">Very High</label>' +
+							'</div>' +
+							'</fieldset>' +
 							'</p>';
 				}
 				
 				survey_form += '<p>' +
-						'<input type="submit" name="survey-submit-button" id="survey-submit-button" value="Send" onfocus="this.blur();" />' +
+						'<button name="survey-submit-button" id="survey-submit-button">Send</button>' +
 						'</p>';
 
-				var survey_div_container = '\
-							<div class="div-survey-container">\
-								' + survey_form + '\
-							</div>';
+				var survey_div_container = '<div class="div-survey-container">' + survey_form + '</div>';
 				
 				$('#dialog-survey').html(dialog_questions);
 				$('.div-survey').html(survey_div_container);
 				$('.div-survey').css('display', 'block');
 				
+				$('.survey-answers').focus(function() { $(this).css('background-color', '#eaffee'); });
+				$('.survey-answers').blur(function() { $(this).css('background-color', '#fff'); });
+				for(var i in jsonQuestions) {
+					var answersCnt = parseInt(i) + 1;
+					$('#radioConf' + answersCnt).buttonset();
+				}
+				$('#survey-submit-button').button();
+				
 				if ($('#dialog-survey').dialog('isOpen')) {
 					$('#dialog-survey').dialog('close');
 				}
 				
-				$('#survey-submit-button').click(function() {
+				$('#survey-submit-button').click(function() {					
 					var message = '{ "request": "' + ANSWERS_SURVEY + '", "data": { "id": "' + id + '", "username": "' + username + '", "numSurvey": "' + num_survey + '", "numRound": "' + num_round + '", "answersSurvey": ['; // will be complited in the following
 					var num_answers = $('.survey-answers').length;
 					var readyToSend = true;
 					$('.survey-answers').each(function(index) {
-						if(!$(this).val().match(/^\d+$/)) {
-							alert('Please answer all questions by entering only numeric characters!');
+						if(!$(this).val().match(/^\d+(\.\d+)?$/)) {
+							alert('Please, answer all questions by entering only numeric characters (use "." for decimal numbers).');
 							readyToSend = false;
 							return false;
 						}
-						message += $(this).val();
+						
+						var answersCnt = parseInt(index) + 1;
+						if (!$('input[name="radioConfidence' + answersCnt + '"]:radio:checked').length) {
+							alert('Please, select one level of confidence for each answer.');
+							readyToSend = false;
+							return false;
+						}
+						
+						message += '{ "answerString": "' + $(this).val() + '", "confidence": "' + $('input[name="radioConfidence' + answersCnt + '"]:radio:checked').val() + '" }';
 						if(index < num_answers - 1) {
 						 	message += ', ';
 						}
