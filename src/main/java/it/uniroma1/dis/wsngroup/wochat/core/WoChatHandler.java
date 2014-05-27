@@ -581,12 +581,6 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 			LogUsersList.logUsersList(remoteHost + Constants.CVS_DELIMITER + id + Constants.CVS_DELIMITER + username);
 			LogConnection.logConnection("[NEW CONNECTION]\t(" + remoteHost + ", " + id + ", " + username + ") connected. #Channels: 1");
 			
-			long currentTimestamp = System.currentTimeMillis() / 1000L;
-			data.incrementMsgCounter();
-			String seqHex = "0x" + String.format("%08x", data.getMsgCounter() & 0xFFFFFFFF);
-			String sighting = "S t=" + currentTimestamp + " src=" + id + " seq=" + seqHex;
-			LogInteraction.logInteraction(sighting);
-			
 			/** Broadcast new user to everyone */
 			broadcastUserStatus(id, username, channel, Constants.USERS_ADD);
 			
@@ -867,7 +861,7 @@ public class WoChatHandler extends SimpleChannelInboundHandler<Object> {
 		}
 		
 		/** Logging */
-		String interaction = "C t=" + currentTimestamp + " src=" + userIdFrom + " dst=" + userIdTo + " seq=" + seqHex;
+		String interaction = currentTimestamp + Constants.CVS_DELIMITER + userIdFrom + Constants.CVS_DELIMITER + userIdTo + Constants.CVS_DELIMITER + seqHex;
 		LogInteraction.logInteraction(interaction);
 		String message = "(" + currentTimestamp + ") " + "[" + userIdFrom + "," + userIdTo + "] " + "{" + msgBody + "}";
 		LogMessage.logMsg(message);
