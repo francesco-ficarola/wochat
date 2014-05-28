@@ -9,7 +9,7 @@ public class Constants {
 	public static final String KILL_ME_CONF = "killme.now";
 	
 	public static final String NEW_LINE = "\n";
-	public static final String CVS_DELIMITER = "; ";
+	public static final String CVS_DELIMITER = ";";
 	public static final String WEBSOCKET_PATH = "/chat";
 	public static final int MIN_USERS_ID_RANGE = 1000;
 	public static final String USERS_ADD = "users_add";
